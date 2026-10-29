@@ -14,6 +14,7 @@
       <nav>
         {% if can_view_roster %}<a href="{% url 'roster:student_list' %}">Students</a>{% endif %}
         {% if can_take_attendance %}<a href="{% url 'events:event_list' %}">Events</a>{% endif %}
+        {% if can_view_finance %}<a href="{% url 'finance:payment_list' %}">Payments</a>{% endif %}
         {% if can_edit_roster %}<a href="{% url 'roster:import_upload' %}">Import roster</a>
           <a href="{% url 'student_logins' %}">Logins</a>{% endif %}
         {% if is_student %}<a href="{% url 'me' %}">My record</a>{% endif %}

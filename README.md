@@ -9,6 +9,7 @@ Django 5.2 on Python 3.13.
   (CSV or Excel, with preview), and the per-year student list.
 - Milestone 2: student logins by student number, temporary passwords with forced change, login lockout.
 - Milestone 3: events, the attendance grid, and QR scanner imports.
+- Milestone 4: fines, waivers, dues, payments with receipts, refunds and reversals.
 
 ## Run it locally
 
@@ -72,6 +73,34 @@ Scans are matched by student number, including codes that carry extra text such 
 scan that matches only by name is shown for **review** and applied only if ticked. Scans dated on another day
 are rejected. Applying only adds marks, never removes them, and keeps the earliest IN and latest OUT time. A
 file whose SHA-256 matches one already applied in the term cannot be applied again.
+
+## Fines, dues and payments
+
+Fines are worked out from the attendance marks whenever a balance is shown, never stored, so fixing a mark,
+adding a waiver or changing a rate is reflected everywhere at once. For each event dated today or earlier
+that a student is expected at:
+
+    fine = missing IN/OUT marks × absence rate + uniform violations × (absence rate + uniform extra)
+
+with the officer or regular rates of the term. Dues are the student's weekly rate × the term's weeks.
+Students who are not enrolled owe no fines and no dues.
+
+    balance = fines (not waived) + dues − payments + refunds
+
+- **Waivers** (Treasurer) excuse one student from all of one event's fines, with a reason. Revoking a waiver
+  keeps it on record.
+- **Payments** (Treasurer) are cash or GCash. A payment above the balance is rejected. A GCash payment needs
+  its reference number, which can be used once per term (spaces and dashes are ignored). There is no
+  screenshot upload. Each payment gets the next official receipt number, `OR-00001`, `OR-00002`, ..., and a
+  printable receipt showing the balance after it.
+- **Refunds** return money a student overpaid, for example after a waiver or after they stopped being
+  enrolled. A refund can be at most the student's credit. Refunds are numbered `RF-00001`, ...
+- **Reversals** void a payment or refund entered by mistake. The entry stays on record, marked reversed with
+  the reason, and no longer counts. Its receipt number is not reused, and its GCash reference can be used
+  again on the corrected entry.
+
+Payments, waivers and receipts are never deleted; Setup shows them read-only. Officers cannot see payments.
+Admins can view balances and payments but only Treasurers change them.
 
 ## Term rates
 

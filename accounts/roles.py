@@ -17,6 +17,9 @@ ROSTER_VIEWERS = {ADMIN, TREASURER, OFFICER}
 ROSTER_EDITORS = {ADMIN, TREASURER}
 # Events, the attendance grid and QR scan imports.
 ATTENDANCE_EDITORS = {ADMIN, TREASURER, OFFICER}
+# Balances, payments and receipts; only the treasurer takes money, refunds, reverses and waives.
+FINANCE_VIEWERS = {ADMIN, TREASURER}
+FINANCE_EDITORS = {TREASURER}
 
 
 def user_roles(user):

@@ -51,7 +51,7 @@
     <tr class="{% if not s.is_enrolled %}dim{% endif %}">
       <td>{{ page.start_index|add:forloop.counter0 }}</td>
       <td class="mono">{{ s.student_no }}</td>
-      <td>{{ s.full_name }}</td>
+      <td>{% if can_view_finance %}<a href="{% url 'finance:account' s.pk %}">{{ s.full_name }}</a>{% else %}{{ s.full_name }}{% endif %}</td>
       <td>{{ s.group|default:"—" }}</td>
       <td>{% if s.is_officer %}Officer{% endif %}</td>
       <td>{{ s.get_status_display }}</td>

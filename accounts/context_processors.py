@@ -8,5 +8,7 @@ def roles(request):
         "can_view_roster": bool(user_roles & r.ROSTER_VIEWERS),
         "can_edit_roster": bool(user_roles & r.ROSTER_EDITORS),
         "can_take_attendance": bool(user_roles & r.ATTENDANCE_EDITORS),
+        "can_view_finance": bool(user_roles & r.FINANCE_VIEWERS),
+        "can_edit_finance": bool(user_roles & r.FINANCE_EDITORS),
         "is_student": r.STUDENT in user_roles,
     }

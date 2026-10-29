@@ -63,16 +63,19 @@ class Term(models.Model):
         extra = self.uniform_extra_officer if student.is_officer else self.uniform_extra_regular
         return self.absence_fine_for(student) + extra
 
-    def weekly_dues_for(self, student):
-        """Weekly dues for a student: the most specific matching rate wins."""
+    def weekly_dues_for(self, student, rates=None):
+        """Weekly dues for a student: the most specific matching rate wins.
+
+        Pass the term's rates as a list to avoid a query per student.
+        """
         best = None
-        for rate in self.dues_rates.all():
+        for rate in self.dues_rates.all() if rates is None else rates:
             if rate.matches(student) and (best is None or rate.specificity > best.specificity):
                 best = rate
         return best.weekly_amount if best else self.weekly_dues
 
-    def total_dues_for(self, student):
-        return self.weekly_dues_for(student) * self.dues_weeks
+    def total_dues_for(self, student, rates=None):
+        return self.weekly_dues_for(student, rates) * self.dues_weeks
 
 
 class DuesRate(models.Model):
