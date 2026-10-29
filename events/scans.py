@@ -10,6 +10,7 @@ the same file cannot be applied twice in a term.
 import datetime
 import hashlib
 import re
+import unicodedata
 from collections import defaultdict
 
 from django.conf import settings
@@ -110,7 +111,10 @@ def parse_type(text):
 
 
 def _name_key(text):
-    return " ".join(sorted(re.sub(r"[^a-z ]+", " ", text.casefold().replace(",", " ")).split()))
+    """Order- and punctuation-free form of a name: "Peña, José M." and "jose m pena" match."""
+    plain = unicodedata.normalize("NFKD", text.casefold())
+    plain = "".join(c for c in plain if not unicodedata.combining(c))
+    return " ".join(sorted(re.sub(r"[\W_]+", " ", plain).split()))
 
 
 def map_columns(header):

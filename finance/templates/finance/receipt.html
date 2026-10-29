@@ -6,6 +6,7 @@
   {% if can_view_finance %}<a href="{% url 'finance:account' p.student_id %}">Back to account</a>{% endif %}</div>
 <section class="card receipt">
   {% if p.is_reversed %}<div class="void">REVERSED</div>{% endif %}
+  <div class="muted">{{ org_name|capfirst }}</div>
   <h1>{% if p.kind == "refund" %}Refund voucher{% else %}Official receipt{% endif %} <span class="mono">{{ p.receipt_no }}</span></h1>
   <table class="grid kv">
     <tr><th>Date</th><td>{{ p.recorded_at|date:"F j, Y g:i A" }}</td></tr>

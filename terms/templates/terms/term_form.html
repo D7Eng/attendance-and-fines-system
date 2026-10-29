@@ -19,7 +19,7 @@
        blank (Any) to match everyone. When several rates match a student, the one with the most criteria wins.</p>
     {{ formset.management_form }}
     {{ formset.non_form_errors }}
-    <table class="grid">
+    <table class="grid rates">
       <thead><tr><th>Label</th><th>Officers</th><th>Year</th><th>Group</th><th>Weekly amount</th><th>Delete</th></tr></thead>
       <tbody>{% for f in formset %}
         <tr>{{ f.id }}

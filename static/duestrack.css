@@ -70,3 +70,4 @@ button.link-dark { background:none; border:0; color:var(--accent); text-decorati
 .form-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(16rem, 1fr)); gap:0 1.5rem; }
 .form-grid label { display:block; font-weight:600; font-size:.9rem; }
 .details { white-space:pre-wrap; font-size:.8rem; max-width:32rem; margin:.25rem 0; }
+.grid.rates { table-layout:fixed; } .grid.rates input, .grid.rates select { width:100%; } .grid.rates th:last-child { width:4rem; }

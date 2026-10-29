@@ -79,6 +79,13 @@ class ScanImportTests(TestCase):
         self.assertEqual(ana.scan_times, {"am_in": "07:55", "am_out": "12:01", "pm_in": "12:45"})
         self.assertTrue(Attendance.objects.get(student=self.carla).am_in)
 
+    def test_name_match_ignores_order_accents_and_punctuation(self):
+        Student.objects.create(
+            term=self.term, student_no="2026-0009", last_name="Peña", first_name="José", year_level=1
+        )
+        imp = self.preview("Name,Time\njose pena,08:00\n")
+        self.assertEqual(imp.rows[0]["student_label"], "2026-0009 Peña, José")
+
     def test_review_rows_need_acceptance(self):
         imp = self.preview('Name,Time\n"Santos, Carla Diaz",08:00\n')
         self.assertEqual(imp.rows[0]["kind"], "review")
