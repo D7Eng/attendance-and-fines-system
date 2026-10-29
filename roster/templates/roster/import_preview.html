@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Import preview · DuesTrack{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Import preview</h1>
+  <span class="muted">{{ imp.file_name }} → {{ imp.term }}</span>
+</div>
+
+{% if already_applied %}
+  <div class="msg msg-warning">This exact file was already applied to {{ imp.term }} on {{ already_applied.applied_at|date:"M j, Y g:i A" }}.</div>
+{% endif %}
+
+<nav class="tabs summary">
+  <a href="?" class="{% if not show %}active{% endif %}">All <span class="count">{{ imp.rows|length }}</span></a>
+  <a href="?show=new" class="{% if show == 'new' %}active{% endif %}">New <span class="count">{{ imp.new_count }}</span></a>
+  <a href="?show=changed" class="{% if show == 'changed' %}active{% endif %}">Changed <span class="count">{{ imp.changed_count }}</span></a>
+  <a href="?show=unchanged" class="{% if show == 'unchanged' %}active{% endif %}">Unchanged <span class="count">{{ imp.unchanged_count }}</span></a>
+  <a href="?show=error" class="{% if show == 'error' %}active{% endif %}">Errors <span class="count">{{ imp.error_count }}</span></a>
+</nav>
+{% if missing_count %}<p class="muted">{{ missing_count }} student{{ missing_count|pluralize }} on the current roster {{ missing_count|pluralize:"is,are" }} not in this file and will be kept as they are.</p>{% endif %}
+
+{% if imp.status == "preview" %}
+<form method="post" action="{% url 'roster:import_apply' imp.pk %}" class="apply">
+  {% csrf_token %}
+  <button type="submit"{% if not imp.new_count and not imp.changed_count %} disabled{% endif %}>
+    Apply: add {{ imp.new_count }}, update {{ imp.changed_count }}
+  </button>
+  {% if imp.error_count %}<span class="muted">{{ imp.error_count }} row{{ imp.error_count|pluralize }} with errors will be skipped. Fix the file and upload again to include them.</span>{% endif %}
+  <a href="{% url 'roster:import_upload' %}">Cancel</a>
+</form>
+{% else %}
+<p class="msg msg-success">Applied {{ imp.applied_at|date:"M j, Y g:i A" }}.</p>
+{% endif %}
+
+<table class="grid">
+  <thead><tr><th>Row</th><th>Result</th><th>Student no.</th><th>Name</th><th>Year</th><th>Group</th><th>Officer</th><th>Status</th><th>Details</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr class="row-{{ r.kind }}">
+      <td>{{ r.line }}</td>
+      <td><span class="tag tag-{{ r.kind }}">{{ r.kind|capfirst }}</span></td>
+      <td class="mono">{{ r.values.student_no }}</td>
+      <td>{{ r.values.last_name }}, {{ r.values.first_name }} {{ r.values.middle_name }}</td>
+      <td>{{ r.values.year_level|default:"" }}</td>
+      <td>{{ r.values.group }}</td>
+      <td>{% if r.values.is_officer %}Yes{% endif %}</td>
+      <td>{% if r.values.status == "not_enrolled" %}Not enrolled{% elif r.values.status %}Enrolled{% endif %}</td>
+      <td>
+        {% for e in r.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        {% for field, pair in r.changes.items %}<div>{% for k, label in field_labels.items %}{% if k == field %}{{ label }}{% endif %}{% endfor %}: <s>{{ pair.0|default:"(blank)" }}</s> → {{ pair.1|default:"(blank)" }}</div>{% endfor %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="9" class="muted">No rows.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

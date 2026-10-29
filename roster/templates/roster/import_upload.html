@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Import roster · DuesTrack{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Import roster</h1>
+  <p>Upload a CSV or Excel file with one student per row. You will see a preview before anything is saved.
+     Students are matched by student number only; students not in the file are kept.</p>
+  <p class="muted">Columns: <b>Student No.</b>, <b>Last Name</b>, <b>First Name</b> (or one <b>Name</b> column as "Last, First Middle"),
+     Middle Name, <b>Year</b>, Group/Section, Officer (yes/no or a position), Status (Enrolled / Not enrolled).</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Preview import</button>
+  </form>
+</section>
+{% if recent %}
+<section class="card">
+  <h2>Recent imports</h2>
+  <table class="grid">
+    <thead><tr><th>File</th><th>Term</th><th>Uploaded</th><th>By</th><th>New</th><th>Changed</th><th>Errors</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for imp in recent %}
+      <tr>
+        <td><a href="{% url 'roster:import_preview' imp.pk %}">{{ imp.file_name }}</a></td>
+        <td>{{ imp.term }}</td><td>{{ imp.uploaded_at|date:"M j, Y g:i A" }}</td><td>{{ imp.uploaded_by|default:"—" }}</td>
+        <td>{{ imp.new_count }}</td><td>{{ imp.changed_count }}</td><td>{{ imp.error_count }}</td><td>{{ imp.get_status_display }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

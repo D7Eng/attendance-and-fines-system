@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Log in · DuesTrack{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Log in</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit">Log in</button>
+  </form>
+  <p class="notice">
+    <strong>Privacy notice.</strong> DuesTrack keeps only the student details needed to record attendance,
+    fines, dues and payments for the organization. Access is limited by role, and students can see only their
+    own record. Data is processed in line with the Data Privacy Act of 2012 (RA 10173).
+  </p>
+</section>
+{% endblock %}
