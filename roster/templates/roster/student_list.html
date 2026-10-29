@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Students · DuesTrack{% endblock %}
+{% block content %}
+{% if not term %}
+  <section class="card">
+    <h1>Students</h1>
+    <p>No term has been set up yet.{% if user.is_staff %} <a href="{% url 'admin:terms_term_add' %}">Create a term</a> first.{% endif %}</p>
+  </section>
+{% else %}
+<div class="head">
+  <h1>Students</h1>
+  <form method="get" class="term-pick">
+    <select name="term" onchange="this.form.submit()" aria-label="Term">
+      {% for t in terms %}<option value="{{ t.pk }}"{% if t.pk == term.pk %} selected{% endif %}>{{ t.name }}{% if t.is_active %} (active){% endif %}</option>{% endfor %}
+    </select>
+  </form>
+</div>
+
+<nav class="tabs">
+  {% for value, label, count in years %}
+    <a href="?term={{ term.pk }}&year={{ value }}" class="{% if value == year %}active{% endif %}">{{ label }} <span class="count">{{ count }}</span></a>
+  {% endfor %}
+</nav>
+
+<form method="get" class="filters">
+  <input type="hidden" name="term" value="{{ term.pk }}">
+  <input type="hidden" name="year" value="{{ year }}">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search name or student no." aria-label="Search">
+  <select name="group" aria-label="Group">
+    <option value="">All groups</option>
+    {% for g in groups %}<option value="{{ g }}"{% if g|lower == group|lower %} selected{% endif %}>{{ g }}</option>{% endfor %}
+  </select>
+  <select name="officer" aria-label="Officer">
+    <option value="">Officers and members</option>
+    <option value="yes"{% if officer == "yes" %} selected{% endif %}>Officers only</option>
+    <option value="no"{% if officer == "no" %} selected{% endif %}>Members only</option>
+  </select>
+  <select name="status" aria-label="Status">
+    <option value="">Any status</option>
+    {% for value, label in status_choices %}<option value="{{ value }}"{% if value == status %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button type="submit">Filter</button>
+  {% if q or group or officer or status %}<a href="?term={{ term.pk }}&year={{ year }}">Clear</a>{% endif %}
+</form>
+
+<p class="muted">{{ result_count }} student{{ result_count|pluralize }}</p>
+<table class="grid">
+  <thead><tr><th>#</th><th>Student no.</th><th>Name</th><th>Group</th><th>Officer</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for s in page %}
+    <tr class="{% if not s.is_enrolled %}dim{% endif %}">
+      <td>{{ page.start_index|add:forloop.counter0 }}</td>
+      <td class="mono">{{ s.student_no }}</td>
+      <td>{{ s.full_name }}</td>
+      <td>{{ s.group|default:"—" }}</td>
+      <td>{% if s.is_officer %}Officer{% endif %}</td>
+      <td>{{ s.get_status_display }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="muted">No students match.{% if can_edit_roster and not q and not group %} <a href="{% url 'roster:import_upload' %}">Import a roster</a>.{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% if page.has_other_pages %}
+<nav class="pager">
+  {% if page.has_previous %}<a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.previous_page_number }}">Previous</a>{% endif %}
+  <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.next_page_number }}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endif %}
+{% endblock %}
