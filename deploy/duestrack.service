@@ -1,0 +1,15 @@
+# /etc/systemd/system/duestrack.service
+[Unit]
+Description=DuesTrack (gunicorn)
+After=network.target postgresql.service
+
+[Service]
+User=duestrack
+Group=duestrack
+WorkingDirectory=/srv/duestrack
+EnvironmentFile=/etc/duestrack.env
+ExecStart=/srv/duestrack/.venv/bin/gunicorn duestrack.wsgi:application --bind 127.0.0.1:8000 --workers 3
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

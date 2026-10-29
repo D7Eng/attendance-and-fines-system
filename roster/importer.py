@@ -15,6 +15,8 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from audit.log import record
+
 from .models import RosterImport, Student
 
 NEW = "new"
@@ -310,4 +312,11 @@ def apply_import(roster_import):
     roster_import.status = RosterImport.APPLIED
     roster_import.applied_at = timezone.now()
     roster_import.save(update_fields=["status", "applied_at"])
+    record(
+        "roster_import",
+        f"Roster file {roster_import.file_name} applied to {roster_import.term}: {created} added, {updated} changed",
+        target=roster_import,
+        sha256=roster_import.file_sha256,
+        skipped_errors=roster_import.error_count,
+    )
     return created, updated

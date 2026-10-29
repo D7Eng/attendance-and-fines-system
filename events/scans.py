@@ -16,6 +16,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from audit.log import record
 from roster.importer import HEADER_ALIASES, RosterFileError, _norm_header, read_cells
 from roster.models import Student
 
@@ -321,4 +322,12 @@ def apply_import(scan_import, user, accepted_lines=()):
     scan_import.applied_at = timezone.now()
     scan_import.marks_added = added
     scan_import.save(update_fields=["status", "applied_at", "marks_added"])
+    record(
+        "scan_import",
+        f"QR scans {scan_import.file_name} applied to {event}: {added} marks added",
+        target=scan_import,
+        actor=user,
+        sha256=scan_import.file_sha256,
+        accepted_review_rows=sorted(accepted_lines),
+    )
     return added

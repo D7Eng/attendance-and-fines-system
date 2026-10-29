@@ -20,6 +20,9 @@ ATTENDANCE_EDITORS = {ADMIN, TREASURER, OFFICER}
 # Balances, payments and receipts; only the treasurer takes money, refunds, reverses and waives.
 FINANCE_VIEWERS = {ADMIN, TREASURER}
 FINANCE_EDITORS = {TREASURER}
+# Term settings and rates, and the audit log.
+SETTINGS_EDITORS = {ADMIN, TREASURER}
+AUDIT_VIEWERS = {ADMIN, TREASURER}
 
 
 def user_roles(user):

@@ -11,6 +11,7 @@ Django 5.2 on Python 3.13.
 - Milestone 3: events, the attendance grid, and QR scanner imports.
 - Milestone 4: fines, waivers, dues, payments with receipts, refunds and reversals.
 - Milestone 5: dashboard, printable reports with CSV export, statements, and student self-service.
+- Milestone 6: audit log, settings screen, encrypted backups, privacy notice, deployment files.
 
 ## Run it locally
 
@@ -22,19 +23,27 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Log in at `/admin/`, create a term (Setup → Terms) and give users a role by adding them to one of the
-groups **Admin**, **Treasurer**, **Officer** or **Student**. Then open `/students/import/`.
+Log in, give staff users a role in Setup (`/admin/`) by adding them to one of the groups **Admin**,
+**Treasurer** or **Officer**, create a term under **Settings**, then import the roster under **Import roster**.
+Students get the **Student** role automatically when their login is created.
 
 Run the tests with `python manage.py test`.
 
 ## Roles
 
-| Role | Roster list | Roster import |
-| --- | --- | --- |
-| Admin | yes | yes |
-| Treasurer | yes | yes |
-| Officer | yes | no |
-| Student | no (own record only, later milestone) | no |
+| | Admin | Treasurer | Officer | Student |
+| --- | --- | --- | --- |
+| Roster list | yes | yes | yes | no |
+| Roster import, student logins | yes | yes | no | no |
+| Events, attendance grid, QR import | yes | yes | yes | no |
+| Dashboard | yes | yes | yes, without money | no |
+| Balances, payments, receipts, reports | view | yes | no | own record and receipts only |
+| Take payments, refunds, reversals, waivers | no | yes | no | no |
+| Settings (terms, rates, dues by group) | yes | yes | no | no |
+| Audit log | yes | yes | no | no |
+
+A superuser counts as Admin. Setup (`/admin/`) is for user accounts; money and audit records are read-only
+there.
 
 ## Student logins
 
@@ -124,7 +133,7 @@ level from the command line, for checking against the old spreadsheet.
 
 ## Term rates
 
-Every term carries its own rules, editable in Setup until the settings page arrives in milestone 6:
+Every term carries its own rules, edited under **Settings** (Treasurer or Admin). Changes are logged.
 
 - Absence fine per missing IN or OUT mark: 25 regular, 50 officers.
 - Uniform violation: one absence charge plus an extra (75 regular, 50 officers), so 100 total by default.
@@ -150,7 +159,52 @@ sit below title rows. Recognized columns, case-insensitive:
 Rows are matched to the term's roster by student number only. The preview shows new, changed, unchanged
 and error rows; applying writes only new and changed rows. Students missing from the file are kept.
 
+## Audit log
+
+Logins (and failed logins), logouts, password changes, temporary passwords, roster imports, event changes,
+attendance edits (with each student's before and after), QR scan imports, payments, refunds, reversals,
+waivers, settings changes and backups are written to the audit log with the user, time and address. Entries
+cannot be edited or deleted, in the app or in Setup. Treasurers and Admins can search it under **Audit log**.
+
+## Records and privacy
+
+Nothing is deleted automatically. Payments, refunds, waivers and audit entries cannot be deleted at all;
+mistakes are reversed or revoked and stay on record. Roster records, events with attendance and terms are
+protected from deletion while anything refers to them.
+
+Every page needs a login except the login page and the privacy notice (`/privacy/`), which explains under
+RA 10173 what is kept, why, who can see it, how long, and how to exercise data subject rights. Set
+`DUESTRACK_ORG_NAME` and `DUESTRACK_PRIVACY_CONTACT` to fill in the organization and contact. Pages carry
+`noindex`. Sessions end when the browser closes or after 8 hours.
+
+## Backups
+
+`python manage.py backup` writes the whole database as a gzipped JSON fixture encrypted with Fernet (AES
+with an HMAC) to `DUESTRACK_BACKUP_DIR`, readable only by the app user. Make the key once with
+`python manage.py make_backup_key`, put it in `DUESTRACK_BACKUP_KEY`, and keep a copy off the server:
+without it the backups cannot be read. Old backups are kept unless you pass `--keep-days N`. Copy the backup
+folder off the server too (for example with `rclone` to cloud storage).
+
+To restore into a fresh database: `python manage.py migrate`, then
+`python manage.py restore_backup FILE --load`. `--output data.json` only decrypts it.
+
 ## Production
 
-Set `DJANGO_DEBUG=0`, `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, and `POSTGRES_DB`, `POSTGRES_USER`,
-`POSTGRES_PASSWORD`, `POSTGRES_HOST` to use PostgreSQL. Serve with gunicorn behind nginx over HTTPS.
+`deploy/` has a systemd unit for gunicorn, a daily backup timer, an nginx site with HTTPS (certbot), and an
+example environment file. On a VPS (a Singapore region keeps latency low from the Philippines):
+
+```bash
+sudo useradd --system --home /srv/duestrack duestrack
+# copy the code to /srv/duestrack, then as duestrack:
+python3.13 -m venv .venv && .venv/bin/pip install -r requirements.txt
+sudo cp deploy/duestrack.env.example /etc/duestrack.env   # fill it in, chmod 640
+set -a; . /etc/duestrack.env; set +a
+.venv/bin/python manage.py migrate && .venv/bin/python manage.py collectstatic --noinput
+.venv/bin/python manage.py createsuperuser
+sudo cp deploy/duestrack*.service deploy/duestrack-backup.timer /etc/systemd/system/
+sudo systemctl enable --now duestrack duestrack-backup.timer
+sudo cp deploy/nginx.conf /etc/nginx/sites-available/duestrack   # set your domain, then certbot --nginx
+```
+
+With `DJANGO_DEBUG=0` the app requires `DJANGO_SECRET_KEY`, redirects to HTTPS, sends HSTS, and marks
+cookies secure. It reads the client address from nginx's `X-Real-IP` for lockouts and the audit log.

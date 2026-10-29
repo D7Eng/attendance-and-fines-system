@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from accounts.roles import ATTENDANCE_EDITORS, role_required
+from audit.log import changes, record
 from roster.importer import RosterFileError
 from roster.models import YEAR_LEVEL_CHOICES
 from terms.models import Term
@@ -32,11 +33,18 @@ def event_list(request):
 def event_form(request, pk=None):
     event = get_object_or_404(Event, pk=pk) if pk else None
     form = EventForm(request.POST or None, instance=event)
+    fields = ["name", "date", "has_am", "has_pm", "year_levels", "notes"]
+    before = {f: getattr(event, f) for f in fields} if event else None
     if request.method == "POST" and form.is_valid():
         event = form.save(commit=False)
-        if not event.pk:
+        created = not event.pk
+        if created:
             event.created_by = request.user
         event.save()
+        if created:
+            record("event_created", f"Event {event} created in {event.term}", target=event)
+        elif diff := changes(before, event, fields):
+            record("event_changed", f"Event {event} changed", target=event, changes=diff)
         messages.success(request, f"Saved {event}.")
         return redirect("events:attendance", pk=event.pk)
     return render(request, "events/event_form.html", {"form": form, "event": event})
@@ -50,6 +58,7 @@ def event_delete(request, pk):
         messages.error(request, "This event already has attendance, so it is kept. Edit it instead.")
         return redirect("events:attendance", pk=pk)
     term_id = event.term_id
+    record("event_deleted", f"Event {event} deleted (it had no attendance)", target=event)
     event.delete()
     messages.success(request, "Event deleted.")
     return redirect(f"{reverse('events:event_list')}?term={term_id}")
@@ -84,6 +93,7 @@ def attendance(request, pk):
     if request.method == "POST":
         shown = {int(i) for i in request.POST.getlist("shown") if i.isdigit()}
         changed = 0
+        log = []
         for student in students:
             if student.pk not in shown:
                 continue
@@ -95,11 +105,16 @@ def attendance(request, pk):
                 row = Attendance(event=event, student=student)
             elif all(getattr(row, f) == v for f, v in values.items()):
                 continue
+            log.append({"student": student.student_no, "changes": changes(row, values, fields)})
             for f, v in values.items():
                 setattr(row, f, v)
             row.updated_by = request.user
             row.save()
             changed += 1
+        if log:
+            record(
+                "attendance_changed", f"Attendance edited for {changed} student(s) at {event}", target=event, rows=log
+            )
         messages.success(request, f"Attendance saved ({changed} student{'s' if changed != 1 else ''} changed).")
         return redirect(request.get_full_path())
 

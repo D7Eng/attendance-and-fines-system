@@ -20,6 +20,8 @@
         {% if can_edit_roster %}<a href="{% url 'roster:import_upload' %}">Import roster</a>
           <a href="{% url 'student_logins' %}">Logins</a>{% endif %}
         {% if is_student %}<a href="{% url 'me' %}">My record</a>{% endif %}
+        {% if can_edit_settings %}<a href="{% url 'terms:term_list' %}">Settings</a>{% endif %}
+        {% if can_view_audit %}<a href="{% url 'audit:log' %}">Audit log</a>{% endif %}
         {% if user.is_staff %}<a href="{% url 'admin:index' %}">Setup</a>{% endif %}
       </nav>
       <form method="post" action="{% url 'logout' %}" class="logout">

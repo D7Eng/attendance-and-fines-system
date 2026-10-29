@@ -2,13 +2,11 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.cache import cache
 
+from duestrack.net import client_ip
+
 # After this many failed logins for one username from one address, wait LOCKOUT_SECONDS.
 MAX_FAILURES = 5
 LOCKOUT_SECONDS = 15 * 60
-
-
-def _client_ip(request):
-    return request.META.get("REMOTE_ADDR", "") if request else ""
 
 
 class LoginForm(AuthenticationForm):
@@ -25,7 +23,7 @@ class LoginForm(AuthenticationForm):
 
     def _key(self):
         username = (self.data.get("username") or "").strip().lower()
-        return f"login-fail:{_client_ip(self.request)}:{username}"
+        return f"login-fail:{client_ip(self.request) or ''}:{username}"
 
     def clean(self):
         key = self._key()

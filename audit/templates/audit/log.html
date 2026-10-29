@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Audit log · DuesTrack{% endblock %}
+{% block content %}
+<div class="head"><h1>Audit log</h1><span class="muted">Entries are added automatically and cannot be edited or deleted.</span></div>
+<form method="get" class="filters">
+  <select name="action" aria-label="Action"><option value="">All actions</option>
+    {% for a in actions %}<option value="{{ a }}"{% if a == action %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+  <input name="who" value="{{ who }}" placeholder="User" aria-label="User">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search text, e.g. OR-00012" aria-label="Search">
+  <label>From <input type="date" name="from" value="{{ start|date:'Y-m-d' }}"></label>
+  <label>To <input type="date" name="to" value="{{ end|date:'Y-m-d' }}"></label>
+  <button type="submit">Filter</button>
+</form>
+<table class="grid">
+  <thead><tr><th>When</th><th>User</th><th>Action</th><th>What</th><th>Details</th></tr></thead>
+  <tbody>{% for e in page %}
+    <tr><td>{{ e.at|date:"M j, Y g:i:s A" }}</td><td>{{ e.actor_name|default:"—" }}{% if e.ip %}<div class="muted mono">{{ e.ip }}</div>{% endif %}</td>
+      <td><span class="tag tag-unchanged">{{ e.action }}</span></td><td>{{ e.summary }}</td>
+      <td>{% if e.details %}<details><summary>Show</summary><pre class="mono details">{{ e.details|pprint }}</pre></details>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="5" class="muted">No entries match.</td></tr>{% endfor %}</tbody>
+</table>
+{% if page.has_other_pages %}<nav class="pager">
+  {% if page.has_previous %}<a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.previous_page_number }}">Newer</a>{% endif %}
+  <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.next_page_number }}">Older</a>{% endif %}
+</nav>{% endif %}
+{% endblock %}

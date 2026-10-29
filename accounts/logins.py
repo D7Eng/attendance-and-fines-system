@@ -12,6 +12,8 @@ from django.contrib.auth.models import Group
 from django.db import transaction
 from django.utils import timezone
 
+from audit.log import record
+
 from . import roles
 from .models import profile_for
 
@@ -33,6 +35,7 @@ def issue_temp_password(user):
     profile.must_change_password = True
     profile.temp_password_issued_at = timezone.now()
     profile.save(update_fields=["must_change_password", "temp_password_issued_at"])
+    record("temp_password", f"Temporary password issued to {user.get_username()}", target=user)
     return password
 
 
@@ -56,6 +59,7 @@ def create_student_login(student):
     user.groups.add(Group.objects.get(name=roles.STUDENT))
     student.user = user
     student.save(update_fields=["user", "updated_at"])
+    record("login_linked", f"Login {user.get_username()} linked to {student} ({student.term})", target=student)
     return user, password
 
 

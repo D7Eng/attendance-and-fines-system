@@ -1,9 +1,11 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 
+from audit.log import record
 from roster.models import Student
 from terms.models import Term
 
@@ -33,6 +35,7 @@ class PasswordChangeView(auth_views.PasswordChangeView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        record("password_changed", f"{self.request.user.get_username()} changed their password")
         profile = profile_for(self.request.user)
         if profile.must_change_password:
             profile.must_change_password = False
@@ -47,7 +50,11 @@ class PasswordChangeView(auth_views.PasswordChangeView):
 
 
 def privacy(request):
-    return render(request, "accounts/privacy.html")
+    return render(
+        request,
+        "accounts/privacy.html",
+        {"org_name": settings.DUESTRACK_ORG_NAME, "privacy_contact": settings.DUESTRACK_PRIVACY_CONTACT},
+    )
 
 
 @roles.role_required(*roles.ROSTER_EDITORS)

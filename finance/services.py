@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from audit.log import record
 from roster.models import Student
 
 from .ledger import account_for
@@ -55,7 +56,7 @@ def record_payment(student, amount, user, method=Payment.CASH, gcash_ref="", not
         raise ValidationError(f"Overpayment rejected: the balance is {max(balance, Decimal(0)):,.2f}.")
     try:
         with transaction.atomic():
-            return Payment.objects.create(
+            payment = Payment.objects.create(
                 term=student.term,
                 student=student,
                 kind=Payment.PAYMENT,
@@ -69,6 +70,15 @@ def record_payment(student, amount, user, method=Payment.CASH, gcash_ref="", not
             )
     except IntegrityError as exc:
         raise ValidationError(f"GCash reference {gcash_ref} was already used this term.") from exc
+    record(
+        "payment",
+        f"{payment.receipt_no}: {amount:,.2f} {payment.get_method_display()} from {student}",
+        target=payment,
+        actor=user,
+        gcash_ref=gcash_ref,
+        balance_after=payment.balance_after,
+    )
+    return payment
 
 
 @transaction.atomic
@@ -82,7 +92,7 @@ def record_refund(student, amount, user, reason, method=Payment.CASH, gcash_ref=
     account = account_for(student)
     if amount > account.credit:
         raise ValidationError(f"A refund can be at most the student's credit ({account.credit:,.2f}).")
-    return Payment.objects.create(
+    refund = Payment.objects.create(
         term=student.term,
         student=student,
         kind=Payment.REFUND,
@@ -94,6 +104,10 @@ def record_refund(student, amount, user, reason, method=Payment.CASH, gcash_ref=
         balance_after=account.balance + amount,
         recorded_by=user,
     )
+    record(
+        "refund", f"{refund.receipt_no}: refunded {amount:,.2f} to {student}", target=refund, actor=user, reason=reason
+    )
+    return refund
 
 
 @transaction.atomic
@@ -109,6 +123,13 @@ def reverse_payment(payment, user, reason):
     payment.reversed_by = user
     payment.reversal_reason = reason
     payment.save(update_fields=["reversed_at", "reversed_by", "reversal_reason"])
+    record(
+        "reversal",
+        f"{payment.receipt_no} reversed ({payment.get_kind_display()} {payment.amount:,.2f}, {payment.student})",
+        target=payment,
+        actor=user,
+        reason=reason,
+    )
     return payment
 
 
@@ -121,7 +142,9 @@ def waive(event, student, user, reason):
         raise ValidationError("The event is in another term.")
     if Waiver.objects.filter(event=event, student=student, revoked_at__isnull=True).exists():
         raise ValidationError("This student's fines for the event are already waived.")
-    return Waiver.objects.create(event=event, student=student, reason=reason, created_by=user)
+    waiver = Waiver.objects.create(event=event, student=student, reason=reason, created_by=user)
+    record("waiver", f"Fines waived for {student} at {event}", target=waiver, actor=user, reason=reason)
+    return waiver
 
 
 @transaction.atomic
@@ -133,4 +156,5 @@ def revoke_waiver(waiver, user):
     waiver.revoked_at = timezone.now()
     waiver.revoked_by = user
     waiver.save(update_fields=["revoked_at", "revoked_by"])
+    record("waiver_revoked", f"Waiver revoked for {waiver.student} at {waiver.event}", target=waiver, actor=user)
     return waiver

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{% if term %}{{ term.name }}{% else %}New term{% endif %} · Settings · DuesTrack{% endblock %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <section class="card">
+    <h1>{% if term %}{{ term.name }}{% else %}New term{% endif %}</h1>
+    {{ form.non_field_errors }}
+    <div class="form-grid">
+      {% for field in form %}
+        <p>{{ field.label_tag }} {{ field }}{% if field.help_text %}<br><small class="muted">{{ field.help_text }}</small>{% endif %}{{ field.errors }}</p>
+      {% endfor %}
+    </div>
+    <p class="muted">A uniform violation is charged one absence plus the extra (100 total with the defaults). Not-enrolled students owe nothing.</p>
+  </section>
+  <section class="card">
+    <h2>Dues rates by group</h2>
+    <p class="muted">Override the weekly dues for part of the roster, such as officers, one year level or one section. Leave a criterion
+       blank (Any) to match everyone. When several rates match a student, the one with the most criteria wins.</p>
+    {{ formset.management_form }}
+    {{ formset.non_form_errors }}
+    <table class="grid">
+      <thead><tr><th>Label</th><th>Officers</th><th>Year</th><th>Group</th><th>Weekly amount</th><th>Delete</th></tr></thead>
+      <tbody>{% for f in formset %}
+        <tr>{{ f.id }}
+          <td>{{ f.label }}{{ f.label.errors }}{{ f.non_field_errors }}</td><td>{{ f.officer }}</td><td>{{ f.year_level }}</td>
+          <td>{{ f.group }}</td><td>{{ f.weekly_amount }}{{ f.weekly_amount.errors }}</td><td>{% if f.instance.pk %}{{ f.DELETE }}{% endif %}</td>
+        </tr>
+      {% endfor %}</tbody>
+    </table>
+  </section>
+  <div class="apply"><button type="submit">Save settings</button> <a href="{% url 'terms:term_list' %}">Cancel</a></div>
+</form>
+{% endblock %}

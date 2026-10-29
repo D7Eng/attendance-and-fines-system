@@ -55,6 +55,14 @@ class Term(models.Model):
             Term.objects.filter(is_active=True).exclude(pk=self.pk).update(is_active=False)
         super().save(*args, **kwargs)
 
+    @property
+    def uniform_total_regular(self):
+        return self.absence_fine_regular + self.uniform_extra_regular
+
+    @property
+    def uniform_total_officer(self):
+        return self.absence_fine_officer + self.uniform_extra_officer
+
     def absence_fine_for(self, student):
         return self.absence_fine_officer if student.is_officer else self.absence_fine_regular
 

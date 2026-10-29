@@ -10,5 +10,7 @@ def roles(request):
         "can_take_attendance": bool(user_roles & r.ATTENDANCE_EDITORS),
         "can_view_finance": bool(user_roles & r.FINANCE_VIEWERS),
         "can_edit_finance": bool(user_roles & r.FINANCE_EDITORS),
+        "can_edit_settings": bool(user_roles & r.SETTINGS_EDITORS),
+        "can_view_audit": bool(user_roles & r.AUDIT_VIEWERS),
         "is_student": r.STUDENT in user_roles,
     }
