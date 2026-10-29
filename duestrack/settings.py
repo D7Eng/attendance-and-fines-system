@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "roster",
     "events",
     "finance",
+    "reports",
 ]
 
 MIDDLEWARE = [

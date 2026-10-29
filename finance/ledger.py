@@ -15,7 +15,7 @@ from decimal import Decimal
 from django.db.models import Sum
 from django.utils import timezone
 
-from events.models import Attendance, Event
+from events.models import MARK_LABELS, Attendance, Event
 from roster.models import Student
 
 from .models import Payment, Waiver
@@ -29,7 +29,13 @@ class EventFine:
     missing: int
     uniform: int
     amount: Decimal
+    attendance: Attendance | None = None
     waiver: Waiver | None = None
+
+    @property
+    def missing_labels(self):
+        """e.g. ["AM out", "PM in"]; all marks when the student has no attendance row."""
+        return [MARK_LABELS[f] for f in self.event.mark_fields if not (self.attendance and getattr(self.attendance, f))]
 
     @property
     def charged(self):
@@ -82,11 +88,14 @@ def event_fine(term, event, student, attendance):
     missing = attendance.missing_marks(event) if attendance else len(event.mark_fields)
     uniform = attendance.uniform_violations(event) if attendance else 0
     amount = missing * term.absence_fine_for(student) + uniform * term.uniform_fine_for(student)
-    return EventFine(event=event, missing=missing, uniform=uniform, amount=amount)
+    return EventFine(event=event, missing=missing, uniform=uniform, amount=amount, attendance=attendance)
 
 
-def accounts_for(term, students=None, as_of=None):
-    """Accounts for many students of a term at once, keyed by student id."""
+def accounts_for(term, students=None, as_of=None, include_clear=False):
+    """Accounts for many students of a term at once, keyed by student id.
+
+    Lines list only events with a fine unless include_clear is set.
+    """
     if students is None:
         students = Student.objects.filter(term=term)
     students = list(students)
@@ -118,12 +127,12 @@ def accounts_for(term, students=None, as_of=None):
                 if not event.applies_to(student):
                     continue
                 line = event_fine(term, event, student, attendance.get((event.pk, student.pk)))
-                if line.amount:
+                if line.amount or include_clear:
                     line.waiver = waivers.get((event.pk, student.pk))
                     account.lines.append(line)
         accounts[student.pk] = account
     return accounts
 
 
-def account_for(student, as_of=None):
-    return accounts_for(student.term, [student], as_of)[student.pk]
+def account_for(student, as_of=None, include_clear=False):
+    return accounts_for(student.term, [student], as_of, include_clear)[student.pk]

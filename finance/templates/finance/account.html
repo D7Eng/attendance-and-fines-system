@@ -8,12 +8,11 @@
     · {{ student.term }}{% if student.is_officer %} · Officer{% endif %}{% if not student.is_enrolled %} · <b>Not enrolled</b>{% endif %}</span>
 </div>
 {% include "finance/_summary.html" %}
-{% if can_edit_finance %}
-<div class="apply">
-  {% if acct.balance > 0 %}<a class="button" href="{% url 'finance:pay' student.pk %}">Record payment</a>{% endif %}
-  {% if acct.credit > 0 %}<a class="button" href="{% url 'finance:refund' student.pk %}">Refund {{ acct.credit|floatformat:2|intcomma }}</a>{% endif %}
+<div class="apply noprint">
+  {% if can_edit_finance and acct.balance > 0 %}<a class="button" href="{% url 'finance:pay' student.pk %}">Record payment</a>{% endif %}
+  <a href="{% url 'reports:statement' student.pk %}">Printable statement</a>
+  {% if can_edit_finance and acct.credit > 0 %}<a class="button" href="{% url 'finance:refund' student.pk %}">Refund {{ acct.credit|floatformat:2|intcomma }}</a>{% endif %}
 </div>
-{% endif %}
 
 <section class="card">
   <h2>Fines by event</h2>

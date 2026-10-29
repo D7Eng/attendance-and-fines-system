@@ -5,7 +5,8 @@
   <h1>{{ event.name }}</h1>
   <span class="muted">{{ event.date|date:"D, M j, Y" }} · {{ event.term }} · {{ event.year_levels_display }}
     · <a href="{% url 'events:event_edit' event.pk %}">Edit</a>
-    · <a href="{% url 'events:scan_upload' event.pk %}">Import QR scans</a></span>
+    · <a href="{% url 'events:scan_upload' event.pk %}">Import QR scans</a>
+    · <a href="{% url 'reports:event_report' event.pk %}">Absentee report</a></span>
 </div>
 
 <nav class="tabs">

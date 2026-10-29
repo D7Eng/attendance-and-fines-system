@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ event.name }} report · DuesTrack{% endblock %}
+{% block content %}
+{% include "reports/_print_head.html" with heading=event.name term=event.term %}
+<div class="head"><h1>{{ event.name }}</h1><span class="muted">{{ event.date|date:"D, M j, Y" }} · {{ event.year_levels_display }}</span></div>
+<form method="get" class="filters noprint">
+  <select name="year" aria-label="Year"><option value="">All years</option>
+    {% for v, l in years %}<option value="{{ v }}"{% if v == year %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <button type="submit">Filter</button>
+  <button type="button" onclick="window.print()">Print</button>
+  <a href="?{{ request.GET.urlencode }}&format=csv">Download CSV</a>
+  <a href="{% url 'events:attendance' event.pk %}">Attendance grid</a>
+</form>
+<p>{{ totals.expected }} expected · {{ totals.complete }} complete ({{ totals.attendance_rate|floatformat:0 }}%) · {{ totals.missing }} missing mark{{ totals.missing|pluralize }} · {{ totals.uniform }} uniform violation{{ totals.uniform|pluralize }}
+  {% if show_money %} · fines {{ totals.fines|floatformat:2|intcomma }}{% if totals.waived %} ({{ totals.waived|floatformat:2|intcomma }} waived){% endif %}{% endif %}</p>
+<table class="grid report">
+  <thead><tr><th>Student no.</th><th>Name</th><th>Yr</th><th>Group</th><th>Missing</th><th class="num">Uniform</th>{% if show_money %}<th class="num">Fine</th>{% endif %}</tr></thead>
+  <tbody>{% for s, line in absentees %}
+    <tr class="{% if line.waiver %}dim{% endif %}"><td class="mono">{{ s.student_no }}</td><td>{{ s.full_name }}</td><td>{{ s.year_level }}</td><td>{{ s.group }}</td>
+      <td>{{ line.missing_labels|join:", " }}</td><td class="num">{{ line.uniform }}</td>
+      {% if show_money %}<td class="num">{{ line.amount|floatformat:2|intcomma }}{% if line.waiver %} waived{% endif %}</td>{% endif %}</tr>
+  {% empty %}<tr><td colspan="7" class="muted">Everyone expected has all marks.</td></tr>{% endfor %}</tbody>
+</table>
+{% endblock %}

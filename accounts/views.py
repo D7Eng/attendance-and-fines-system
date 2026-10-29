@@ -1,7 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 
@@ -15,6 +14,8 @@ from .models import profile_for
 
 @login_required
 def home(request):
+    if roles.has_role(request.user, *roles.ATTENDANCE_EDITORS):
+        return redirect("reports:dashboard")
     if roles.has_role(request.user, *roles.ROSTER_VIEWERS):
         return redirect("roster:student_list")
     if roles.has_role(request.user, roles.STUDENT):
@@ -47,22 +48,6 @@ class PasswordChangeView(auth_views.PasswordChangeView):
 
 def privacy(request):
     return render(request, "accounts/privacy.html")
-
-
-def current_record(user, term=None):
-    """The user's roster record for a term (default: the active term, else their latest)."""
-    records = Student.objects.filter(user=user).select_related("term")
-    if term is not None:
-        return records.filter(term=term).first()
-    active = Term.objects.active()
-    return (active and records.filter(term=active).first()) or records.order_by("-term__start_date", "-term_id").first()
-
-
-@login_required
-def me(request):
-    if not roles.has_role(request.user, roles.STUDENT):
-        raise PermissionDenied
-    return render(request, "accounts/me.html", {"student": current_record(request.user)})
 
 
 @roles.role_required(*roles.ROSTER_EDITORS)

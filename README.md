@@ -10,6 +10,7 @@ Django 5.2 on Python 3.13.
 - Milestone 2: student logins by student number, temporary passwords with forced change, login lockout.
 - Milestone 3: events, the attendance grid, and QR scanner imports.
 - Milestone 4: fines, waivers, dues, payments with receipts, refunds and reversals.
+- Milestone 5: dashboard, printable reports with CSV export, statements, and student self-service.
 
 ## Run it locally
 
@@ -101,6 +102,25 @@ Students who are not enrolled owe no fines and no dues.
 
 Payments, waivers and receipts are never deleted; Setup shows them read-only. Officers cannot see payments.
 Admins can view balances and payments but only Treasurers change them.
+
+## Dashboard, reports and statements
+
+- **Dashboard** (Officers, Treasurers, Admins): totals for the term and by year level, and attendance for
+  recent events. Money figures are shown to Treasurers and Admins only.
+- **Balances report**: each student's absences, uniform violations, fines, dues, payments and balance,
+  filtered by year, group, and owing or in credit.
+- **Collections report**: payments and refunds in a date range with daily and per-method totals.
+- **Event report**: who missed which marks at one event (fines shown to Treasurers and Admins only).
+- **Statement of account** for one student: every event with its missing marks and fine, dues, payments,
+  and balance.
+
+Every report prints on US Letter (`@page size: letter`) without the navigation, and downloads as CSV.
+
+**Students** see only **My record**: their own statement for each term they were on the roster, with
+links to their own receipts. Every other page returns 403 for them.
+
+`python manage.py fine_totals [--term NAME|ID] [--as-of YYYY-MM-DD]` prints fine and dues totals per year
+level from the command line, for checking against the old spreadsheet.
 
 ## Term rates
 

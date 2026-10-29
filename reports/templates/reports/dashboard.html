@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Dashboard · DuesTrack{% endblock %}
+{% block content %}
+{% if not term %}<section class="card"><h1>Dashboard</h1><p>No term has been set up yet.</p></section>{% else %}
+<div class="head"><h1>Dashboard</h1>{% include "reports/_term_pick.html" %}</div>
+<p class="muted">{{ term }} · events up to {{ today|date:"M j, Y" }} · {{ overall.students }} student{{ overall.students|pluralize }}</p>
+
+{% if can_view_finance %}
+<div class="stats">
+  <div class="stat"><span>Fines</span><b>{{ overall.fines|floatformat:2|intcomma }}</b>{% if overall.waived %}<small>{{ overall.waived|floatformat:2|intcomma }} waived</small>{% endif %}</div>
+  <div class="stat"><span>Dues</span><b>{{ overall.dues|floatformat:2|intcomma }}</b></div>
+  <div class="stat"><span>Collected (net)</span><b>{{ overall.collected_net|floatformat:2|intcomma }}</b><small>{{ overall.collection_rate|floatformat:0 }}% of billed{% if overall.refunded %}, {{ overall.refunded|floatformat:2|intcomma }} refunded{% endif %}</small></div>
+  <div class="stat owe"><span>Outstanding</span><b>{{ overall.outstanding|floatformat:2|intcomma }}</b>{% if overall.credit %}<small>{{ overall.credit|floatformat:2|intcomma }} credit to refund</small>{% endif %}</div>
+</div>
+{% endif %}
+
+<section class="card">
+  <h2>By year level</h2>
+  <table class="grid">
+    <thead><tr><th>Year</th><th class="num">Students</th><th class="num">Missing marks</th><th class="num">Uniform</th>
+      {% if can_view_finance %}<th class="num">Fines</th><th class="num">Dues</th><th class="num">Paid</th><th class="num">Outstanding</th>{% endif %}</tr></thead>
+    <tbody>{% for y, label, t in by_year %}
+      <tr><td>{% if can_view_finance %}<a href="{% url 'reports:balances' %}?term={{ term.pk }}&year={{ y }}">{{ label }}</a>{% else %}{{ label }}{% endif %}</td>
+        <td class="num">{{ t.students }}</td><td class="num">{{ t.absences }}</td><td class="num">{{ t.uniform_violations }}</td>
+        {% if can_view_finance %}<td class="num">{{ t.fines|floatformat:2|intcomma }}</td><td class="num">{{ t.dues|floatformat:2|intcomma }}</td>
+        <td class="num">{{ t.paid|floatformat:2|intcomma }}</td><td class="num">{{ t.outstanding|floatformat:2|intcomma }}</td>{% endif %}</tr>
+    {% empty %}<tr><td colspan="8" class="muted">No students yet.</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Recent events</h2>
+  <table class="grid">
+    <thead><tr><th>Date</th><th>Event</th><th class="num">Expected</th><th class="num">Complete</th><th class="num">Missing marks</th><th class="num">Uniform</th>{% if can_view_finance %}<th class="num">Fines</th>{% endif %}</tr></thead>
+    <tbody>{% for e in events %}
+      <tr><td>{{ e.event.date|date:"M j" }}</td><td><a href="{% url 'reports:event_report' e.event.pk %}">{{ e.event.name }}</a></td>
+        <td class="num">{{ e.expected }}</td><td class="num">{{ e.complete }} <span class="muted">({{ e.attendance_rate|floatformat:0 }}%)</span></td>
+        <td class="num">{{ e.missing }}</td><td class="num">{{ e.uniform }}</td>{% if can_view_finance %}<td class="num">{{ e.fines|floatformat:2|intcomma }}</td>{% endif %}</tr>
+    {% empty %}<tr><td colspan="7" class="muted">No events held yet.</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+
+{% if can_view_finance %}
+<div class="two">
+<section class="card">
+  <h2>Collections, last 14 days</h2>
+  <table class="grid"><tbody>{% for d in daily %}<tr><td>{{ d.day|date:"D, M j" }}</td><td class="num">{{ d.n }}</td><td class="num">{{ d.total|floatformat:2|intcomma }}</td></tr>
+  {% empty %}<tr><td class="muted">No payments.</td></tr>{% endfor %}</tbody></table>
+  <p><a href="{% url 'reports:collections' %}?term={{ term.pk }}">Collections report</a> · <a href="{% url 'reports:balances' %}?term={{ term.pk }}">Balances report</a></p>
+</section>
+<section class="card">
+  <h2>Latest entries</h2>
+  <table class="grid"><tbody>{% for p in recent %}
+    <tr class="{% if p.is_reversed %}dim{% endif %}"><td class="mono"><a href="{% url 'finance:receipt' p.pk %}">{{ p.receipt_no }}</a></td><td>{{ p.student.full_name }}</td>
+      <td class="num">{% if p.kind == "refund" %}−{% endif %}{{ p.amount|floatformat:2|intcomma }}</td></tr>
+  {% empty %}<tr><td class="muted">No payments.</td></tr>{% endfor %}</tbody></table>
+</section>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

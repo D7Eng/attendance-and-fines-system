@@ -84,7 +84,6 @@ def payment_list(request):
 def account(request, pk):
     student = get_object_or_404(Student.objects.select_related("term"), pk=pk)
     acct = account_for(student)
-    waived_events = {line.event.pk for line in acct.lines if line.waiver}
     return render(
         request,
         "finance/account.html",
@@ -93,7 +92,6 @@ def account(request, pk):
             "acct": acct,
             "payments": student.payments.select_related("recorded_by", "reversed_by"),
             "waivers": Waiver.objects.filter(student=student).select_related("event", "created_by", "revoked_by"),
-            "waived_events": waived_events,
         },
     )
 

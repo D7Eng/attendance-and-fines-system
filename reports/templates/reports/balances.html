@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Balances · DuesTrack{% endblock %}
+{% block content %}
+{% if not term %}<section class="card"><h1>Balances</h1><p>No term has been set up yet.</p></section>{% else %}
+{% include "reports/_print_head.html" with heading="Balances report" %}
+<div class="head"><h1>Balances</h1>{% include "reports/_term_pick.html" %}</div>
+{% include "reports/_nav.html" %}
+<form method="get" class="filters noprint">
+  <input type="hidden" name="term" value="{{ term.pk }}">
+  <select name="year" aria-label="Year"><option value="">All years</option>
+    {% for v, l in years %}<option value="{{ v }}"{% if v == year %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <select name="group" aria-label="Group"><option value="">All groups</option>
+    {% for g in groups %}<option value="{{ g }}"{% if g|lower == group|lower %} selected{% endif %}>{{ g }}</option>{% endfor %}</select>
+  <select name="show" aria-label="Show"><option value="">Everyone</option>
+    <option value="owing"{% if show == "owing" %} selected{% endif %}>With a balance</option>
+    <option value="credit"{% if show == "credit" %} selected{% endif %}>With credit</option></select>
+  <button type="submit">Filter</button>
+  <button type="button" onclick="window.print()">Print</button>
+  <a href="?{{ request.GET.urlencode }}&format=csv">Download CSV</a>
+</form>
+<table class="grid report">
+  <thead><tr><th>Student no.</th><th>Name</th><th>Yr</th><th>Group</th><th class="num">Abs.</th><th class="num">Unif.</th>
+    <th class="num">Fines</th><th class="num">Dues</th><th class="num">Paid</th><th class="num">Balance</th></tr></thead>
+  <tbody>{% for a in rows %}
+    <tr><td class="mono">{{ a.student.student_no }}</td><td><a href="{% url 'finance:account' a.student.pk %}">{{ a.student.full_name }}</a>{% if a.student.is_officer %} <small>(O)</small>{% endif %}</td>
+      <td>{{ a.student.year_level }}</td><td>{{ a.student.group }}</td><td class="num">{{ a.absences }}</td><td class="num">{{ a.uniform_violations }}</td>
+      <td class="num">{{ a.fines|floatformat:2|intcomma }}</td><td class="num">{{ a.dues|floatformat:2|intcomma }}</td>
+      <td class="num">{{ a.paid|floatformat:2|intcomma }}{% if a.refunded %} <small>−{{ a.refunded|floatformat:2|intcomma }}</small>{% endif %}</td>
+      <td class="num">{{ a.balance|floatformat:2|intcomma }}</td></tr>
+  {% empty %}<tr><td colspan="10" class="muted">No students match.</td></tr>{% endfor %}</tbody>
+  <tfoot><tr><th colspan="4">{{ overall.students }} student{{ overall.students|pluralize }}</th><th class="num">{{ overall.absences }}</th><th class="num">{{ overall.uniform_violations }}</th>
+    <th class="num">{{ overall.fines|floatformat:2|intcomma }}</th><th class="num">{{ overall.dues|floatformat:2|intcomma }}</th>
+    <th class="num">{{ overall.collected_net|floatformat:2|intcomma }}</th><th class="num">{{ overall.outstanding|floatformat:2|intcomma }}</th></tr></tfoot>
+</table>
+<p class="muted">Totals cover every student in the year and group chosen. Fines exclude waived amounts ({{ overall.waived|floatformat:2|intcomma }}). Paid is net of refunds; the balance total counts only students who owe.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% load humanize %}
+<section class="card statement">
+  <div class="head"><h2>Statement of account</h2><span class="muted">{{ student.term }} · as of {{ printed|date:"M j, Y" }}</span></div>
+  <p><b>{{ student.full_name }}</b> · <span class="mono">{{ student.student_no }}</span> · {{ student.get_year_level_display }}{% if student.group %} {{ student.group }}{% endif %}{% if student.is_officer %} · Officer{% endif %}{% if not student.is_enrolled %} · Not enrolled{% endif %}</p>
+  {% include "finance/_summary.html" %}
+  <h3>Attendance</h3>
+  <table class="grid report">
+    <thead><tr><th>Date</th><th>Event</th><th>Missing marks</th><th class="num">Uniform</th><th class="num">Fine</th></tr></thead>
+    <tbody>{% for line in acct.lines %}
+      <tr class="{% if line.waiver %}dim{% endif %}"><td>{{ line.event.date|date:"M j, Y" }}</td><td>{{ line.event.name }}</td>
+        <td>{{ line.missing_labels|join:", "|default:"None" }}</td><td class="num">{{ line.uniform }}</td>
+        <td class="num">{% if line.waiver %}<s>{{ line.amount|floatformat:2|intcomma }}</s> waived{% else %}{{ line.amount|floatformat:2|intcomma }}{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="5" class="muted">{% if student.is_enrolled %}No events yet.{% else %}Not enrolled: no fines or dues.{% endif %}</td></tr>{% endfor %}</tbody>
+    <tfoot><tr><th colspan="4">Fines</th><th class="num">{{ acct.fines|floatformat:2|intcomma }}</th></tr>
+      <tr><th colspan="4">Dues ({{ student.term.dues_weeks }} weeks)</th><th class="num">{{ acct.dues|floatformat:2|intcomma }}</th></tr></tfoot>
+  </table>
+  <h3>Payments</h3>
+  <table class="grid report">
+    <thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th class="num">Amount</th></tr></thead>
+    <tbody>{% for p in payments %}
+      <tr class="{% if p.is_reversed %}dim{% endif %}"><td class="mono">{% if receipt_links %}<a href="{% url 'finance:receipt' p.pk %}">{{ p.receipt_no }}</a>{% else %}{{ p.receipt_no }}{% endif %}{% if p.is_reversed %} (reversed){% endif %}</td>
+        <td>{{ p.recorded_at|date:"M j, Y" }}</td><td>{{ p.get_method_display }}{% if p.gcash_ref %} {{ p.gcash_ref }}{% endif %}</td>
+        <td class="num">{% if p.kind == "refund" %}−{% endif %}{{ p.amount|floatformat:2|intcomma }}</td></tr>
+    {% empty %}<tr><td colspan="4" class="muted">No payments yet.</td></tr>{% endfor %}</tbody>
+    <tfoot><tr><th colspan="3">{% if acct.balance < 0 %}Credit{% else %}Balance{% endif %}</th><th class="num">{% if acct.balance < 0 %}{{ acct.credit|floatformat:2|intcomma }}{% else %}{{ acct.balance|floatformat:2|intcomma }}{% endif %}</th></tr></tfoot>
+  </table>
+</section>
