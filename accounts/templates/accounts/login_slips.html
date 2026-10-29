@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Login slips · DuesTrack{% endblock %}
+{% block content %}
+<div class="head noprint">
+  <h1>Login slips</h1>
+  <span><button type="button" onclick="window.print()">Print</button> <a href="{% url 'student_logins' %}?term={{ term.pk }}">Back</a></span>
+</div>
+<p class="msg msg-warning noprint">These temporary passwords are shown only now. Print or copy them before leaving this page.</p>
+{% if linked %}<p class="muted noprint">{{ linked }} student{{ linked|pluralize }} already had a login (kept their password).</p>{% endif %}
+<div class="slips">
+{% for student, password in issued %}
+  <div class="slip">
+    <div class="muted">DuesTrack login · {{ term }}</div>
+    <div><b>{{ student.full_name }}</b></div>
+    <div>Student no.: <span class="mono">{{ student.student_no }}</span></div>
+    <div>Temporary password: <span class="mono">{{ password }}</span></div>
+    <div class="muted">You will be asked to choose your own password when you log in.</div>
+  </div>
+{% empty %}
+  <p>No new passwords were issued.</p>
+{% endfor %}
+</div>
+{% endblock %}

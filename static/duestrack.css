@@ -37,3 +37,8 @@ tr.dim td { color:var(--muted); }
 .apply { display:flex; gap:1rem; align-items:center; margin:1rem 0; flex-wrap:wrap; }
 .pager { display:flex; gap:1rem; justify-content:center; margin:1rem 0; }
 @media print { .topbar, .filters, .tabs, .pager, .apply { display:none; } body { background:#fff; } main { max-width:none; } }
+.kv th { width:12rem; }
+.slips { display:grid; grid-template-columns:repeat(auto-fill, minmax(18rem, 1fr)); gap:.5rem; }
+.slip { border:1px dashed var(--muted); padding:.6rem .8rem; background:#fff; break-inside:avoid; }
+@media print { .noprint { display:none; } .msg { display:none; } }
+@page { size: letter; margin: .5in; }

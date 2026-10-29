@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Student logins · DuesTrack{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Student logins</h1>
+  <form method="get" class="term-pick">
+    <select name="term" onchange="this.form.submit()" aria-label="Term">
+      {% for t in terms %}<option value="{{ t.pk }}"{% if t.pk == term.pk %} selected{% endif %}>{{ t.name }}</option>{% endfor %}
+    </select>
+    <input type="hidden" name="year" value="{{ year }}">
+  </form>
+</div>
+<p class="muted">Students log in with their student number. New logins get a temporary password that they must change
+   on first login. Temporary passwords are shown once, on the next page, for printing.</p>
+<nav class="tabs">
+  {% for y in years %}<a href="?term={{ term.pk }}&year={{ y }}" class="{% if y == year %}active{% endif %}">Year {{ y }}</a>{% endfor %}
+</nav>
+<form method="post">
+  {% csrf_token %}
+  <div class="apply">
+    <select name="action" aria-label="Action">
+      <option value="create">Create logins for checked students</option>
+      <option value="reset">Reset passwords for checked students</option>
+    </select>
+    <button type="submit">Go</button>
+    {{ form.students.errors }}
+  </div>
+  <table class="grid">
+    <thead><tr><th><input type="checkbox" aria-label="Check all" onclick="document.querySelectorAll('input[name=students]').forEach(c => c.checked = this.checked)"></th>
+      <th>Student no.</th><th>Name</th><th>Group</th><th>Login</th></tr></thead>
+    <tbody>
+    {% for s in students %}
+      <tr class="{% if not s.is_enrolled %}dim{% endif %}">
+        <td><input type="checkbox" name="students" value="{{ s.pk }}" aria-label="Select {{ s.full_name }}"></td>
+        <td class="mono">{{ s.student_no }}</td><td>{{ s.full_name }}</td><td>{{ s.group|default:"—" }}</td>
+        <td>{% if not s.user %}<span class="muted">None</span>
+            {% elif s.user.profile.must_change_password %}Temporary password not yet changed
+            {% else %}Active{% endif %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="muted">No students in this year.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</form>
+{% endblock %}

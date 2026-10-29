@@ -13,11 +13,13 @@
     {% if user.is_authenticated %}
       <nav>
         {% if can_view_roster %}<a href="{% url 'roster:student_list' %}">Students</a>{% endif %}
-        {% if can_edit_roster %}<a href="{% url 'roster:import_upload' %}">Import roster</a>{% endif %}
+        {% if can_edit_roster %}<a href="{% url 'roster:import_upload' %}">Import roster</a>
+          <a href="{% url 'student_logins' %}">Logins</a>{% endif %}
+        {% if is_student %}<a href="{% url 'me' %}">My record</a>{% endif %}
         {% if user.is_staff %}<a href="{% url 'admin:index' %}">Setup</a>{% endif %}
       </nav>
       <form method="post" action="{% url 'logout' %}" class="logout">
-        {% csrf_token %}<span>{{ user.get_username }}</span> <button type="submit" class="link">Log out</button>
+        {% csrf_token %}<a href="{% url 'password_change' %}">{{ user.get_username }}</a> <button type="submit" class="link">Log out</button>
       </form>
     {% endif %}
   </header>

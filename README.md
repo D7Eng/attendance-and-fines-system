@@ -5,8 +5,9 @@ Django 5.2 on Python 3.13.
 
 ## Status
 
-Milestone 1 is in: term setup with configurable fine and dues rates, roles, roster import
-(CSV or Excel, with preview), and the per-year student list.
+- Milestone 1: term setup with configurable fine and dues rates, roles, roster import
+  (CSV or Excel, with preview), and the per-year student list.
+- Milestone 2: student logins by student number, temporary passwords with forced change, login lockout.
 
 ## Run it locally
 
@@ -31,6 +32,17 @@ Run the tests with `python manage.py test`.
 | Treasurer | yes | yes |
 | Officer | yes | no |
 | Student | no (own record only, later milestone) | no |
+
+## Student logins
+
+Open **Logins** (Treasurer or Admin), pick the year, check students and choose **Create logins**. Each new
+login uses the student number as its username and gets a 10-character temporary password, shown once on a
+printable page of slips. Passwords are stored hashed only, so a lost slip means **Reset passwords**.
+
+A student's first login sends them to change the temporary password before anything else. Usernames are
+matched without regard to case. One account serves a student across terms: creating a login for next term's
+record links the existing account and keeps its password. After 5 failed attempts for one username from one
+address, logins are refused for 15 minutes.
 
 ## Term rates
 
