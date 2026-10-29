@@ -6,5 +6,6 @@ urlpatterns = [
     path("", include("accounts.urls")),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("students/", include("roster.urls")),
+    path("events/", include("events.urls")),
     path("admin/", admin.site.urls),
 ]

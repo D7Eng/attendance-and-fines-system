@@ -42,3 +42,8 @@ tr.dim td { color:var(--muted); }
 .slip { border:1px dashed var(--muted); padding:.6rem .8rem; background:#fff; break-inside:avoid; }
 @media print { .noprint { display:none; } .msg { display:none; } }
 @page { size: letter; margin: .5in; }
+.center { text-align:center !important; }
+.attendance th.uniform { background:#fff5db; }
+button.danger { background:var(--bad); border-color:var(--bad); }
+.tag-matched { background:#e7f5ec; color:var(--ok); } .tag-already { background:#eef1f5; color:var(--muted); }
+.tag-review { background:#fff5db; color:var(--warn); } .tag-unmatched { background:#fdecea; color:var(--bad); }

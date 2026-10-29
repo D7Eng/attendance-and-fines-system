@@ -15,6 +15,8 @@ ALL_ROLES = [ADMIN, TREASURER, OFFICER, STUDENT]
 # Who may see the full roster, and who may change it.
 ROSTER_VIEWERS = {ADMIN, TREASURER, OFFICER}
 ROSTER_EDITORS = {ADMIN, TREASURER}
+# Events, the attendance grid and QR scan imports.
+ATTENDANCE_EDITORS = {ADMIN, TREASURER, OFFICER}
 
 
 def user_roles(user):

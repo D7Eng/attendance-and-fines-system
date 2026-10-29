@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "accounts",
     "terms",
     "roster",
+    "events",
 ]
 
 MIDDLEWARE = [

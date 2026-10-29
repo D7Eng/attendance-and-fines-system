@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Scan preview · DuesTrack{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Scan preview</h1>
+  <span class="muted">{{ imp.file_name }} → <a href="{% url 'events:attendance' event.pk %}">{{ event }}</a> · {{ imp.get_mode_display }}</span>
+</div>
+{% if already_applied %}<div class="msg msg-error">This exact file was already applied to {{ already_applied.event }} on {{ already_applied.applied_at|date:"M j, Y g:i A" }}. It cannot be applied again.</div>{% endif %}
+<nav class="tabs summary">
+  <a href="?" class="{% if not show %}active{% endif %}">All <span class="count">{{ imp.rows|length }}</span></a>
+  {% for kind, n in kinds %}<a href="?show={{ kind }}" class="{% if show == kind %}active{% endif %}">{{ kind|capfirst }} <span class="count">{{ n }}</span></a>{% endfor %}
+</nav>
+<form method="post" action="{% url 'events:scan_apply' imp.pk %}">
+  {% csrf_token %}
+  {% if imp.status == "preview" and not already_applied %}
+  <div class="apply">
+    <button type="submit">Apply scans</button>
+    <span class="muted">Matched rows are applied. Review rows (matched by name only) are applied only if you tick them. Unmatched and error rows are skipped.</span>
+  </div>
+  {% elif imp.status == "applied" %}
+  <p class="msg msg-success">Applied {{ imp.applied_at|date:"M j, Y g:i A" }}: {{ imp.marks_added }} mark{{ imp.marks_added|pluralize }} added.</p>
+  {% endif %}
+  <table class="grid">
+    <thead><tr><th>Row</th><th>Result</th><th>Scanned code</th><th>Name in file</th><th>Time</th><th>Student</th><th>Mark</th><th>Details</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.line }}</td>
+        <td><span class="tag tag-{{ r.kind }}">{{ r.kind|capfirst }}</span></td>
+        <td class="mono">{{ r.code }}</td><td>{{ r.name }}</td><td>{{ r.time }}</td>
+        <td>{% if r.kind == "review" and imp.status == "preview" %}<label><input type="checkbox" name="accept" value="{{ r.line }}"> {{ r.student_label }}</label>{% else %}{{ r.student_label|default:"" }}{% endif %}</td>
+        <td>{{ r.mark_label|default:"" }}</td>
+        <td>{% for e in r.errors %}<div class="err">{{ e }}</div>{% endfor %}{% for n in r.notes %}<div class="muted">{{ n }}</div>{% endfor %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="8" class="muted">No rows.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</form>
+{% endblock %}

@@ -74,6 +74,11 @@ def _cell_text(value):
 
 def read_table(uploaded_file):
     """Return (header, rows) from a CSV or XLSX upload; rows are (line number, cells)."""
+    return _split_header(read_cells(uploaded_file))
+
+
+def read_cells(uploaded_file):
+    """Return every row of a CSV or XLSX upload (first sheet) as lists of cleaned text."""
     name = uploaded_file.name.lower()
     data = uploaded_file.read()
     if name.endswith(".xlsx"):
@@ -96,8 +101,7 @@ def _read_csv(data):
         dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t")
     except csv.Error:
         dialect = csv.excel
-    rows = [[_cell_text(c) for c in row] for row in csv.reader(io.StringIO(text), dialect)]
-    return _split_header(rows)
+    return [[_cell_text(c) for c in row] for row in csv.reader(io.StringIO(text), dialect)]
 
 
 def _read_xlsx(data):
@@ -112,7 +116,7 @@ def _read_xlsx(data):
         rows = [[_cell_text(c) for c in row] for row in ws.iter_rows(values_only=True)]
     finally:
         wb.close()
-    return _split_header(rows)
+    return rows
 
 
 def _split_header(rows):

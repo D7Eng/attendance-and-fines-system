@@ -8,6 +8,7 @@ Django 5.2 on Python 3.13.
 - Milestone 1: term setup with configurable fine and dues rates, roles, roster import
   (CSV or Excel, with preview), and the per-year student list.
 - Milestone 2: student logins by student number, temporary passwords with forced change, login lockout.
+- Milestone 3: events, the attendance grid, and QR scanner imports.
 
 ## Run it locally
 
@@ -43,6 +44,34 @@ A student's first login sends them to change the temporary password before anyth
 matched without regard to case. One account serves a student across terms: creating a login for next term's
 record links the existing account and keeps its password. After 5 failed attempts for one username from one
 address, logins are refused for 15 minutes.
+
+## Events and attendance
+
+An event has a morning session, an afternoon session, or both, and can be limited to some year levels. Each
+session has an IN and an OUT mark; every missing mark is fined (milestone 4). Only enrolled students of the
+event's year levels are expected. The attendance grid shows one row per expected student with a checkbox per
+mark plus a uniform-violation box per session. Officers, Treasurers and Admins can edit it. An event that has
+any attendance cannot be deleted.
+
+### QR scanner import
+
+Upload the scanner's CSV or Excel export from an event's page. Recognized columns:
+
+| Field | Header names |
+| --- | --- |
+| Scanned code | Student No. (and its aliases), Content, Code, Data, QR Code, Text, Barcode, Value |
+| Name (fallback) | Name, Full Name, Student Name, or Last Name + First Name |
+| When | Timestamp / Date Time, or separate Date and Time |
+| IN/OUT (optional) | Type, In/Out, Status, Mode, Action, Direction |
+
+With **automatic** marks, a scan before the term's AM/PM cutoff (12:30 by default) is morning, otherwise
+afternoon. An IN/OUT column decides the mark when present; otherwise a student's first scan in a session is
+IN and their last later scan is OUT. Or pick one mark (e.g. "PM out") for the whole file.
+
+Scans are matched by student number, including codes that carry extra text such as `2026-0001|CRUZ, ANA`. A
+scan that matches only by name is shown for **review** and applied only if ticked. Scans dated on another day
+are rejected. Applying only adds marks, never removes them, and keeps the earliest IN and latest OUT time. A
+file whose SHA-256 matches one already applied in the term cannot be applied again.
 
 ## Term rates
 
