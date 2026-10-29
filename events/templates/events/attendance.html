@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ event.name }} · DuesTrack{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>{{ event.name }}</h1>
+  <span class="muted">{{ event.date|date:"D, M j, Y" }} · {{ event.term }} · {{ event.year_levels_display }}
+    · <a href="{% url 'events:event_edit' event.pk %}">Edit</a>
+    · <a href="{% url 'events:scan_upload' event.pk %}">Import QR scans</a>
+    · <a href="{% url 'reports:event_report' event.pk %}">Absentee report</a></span>
+</div>
+
+<nav class="tabs">
+  {% for value, label in years %}<a href="?year={{ value }}" class="{% if value == year %}active{% endif %}">{{ label }}</a>{% endfor %}
+</nav>
+<form method="get" class="filters">
+  <input type="hidden" name="year" value="{{ year }}">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search name or student no." aria-label="Search">
+  <select name="group" aria-label="Group">
+    <option value="">All groups</option>
+    {% for g in groups %}<option value="{{ g }}"{% if g|lower == group|lower %} selected{% endif %}>{{ g }}</option>{% endfor %}
+  </select>
+  <button type="submit">Filter</button>
+</form>
+
+<form method="post">
+  {% csrf_token %}
+  <table class="grid attendance">
+    <thead><tr><th>Student no.</th><th>Name</th><th>Group</th>
+      {% for field, label, is_uniform in columns %}
+        <th class="center{% if is_uniform %} uniform{% endif %}">{{ label }}<br>
+          <input type="checkbox" aria-label="Check all {{ label }}" onclick="document.querySelectorAll('input[data-col={{ field }}]').forEach(c => c.checked = this.checked)"></th>
+      {% endfor %}
+      <th>Missing</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="mono">{{ r.student.student_no }}<input type="hidden" name="shown" value="{{ r.student.pk }}"></td>
+        <td>{{ r.student.full_name }}{% if r.student.is_officer %} <span class="tag tag-unchanged">Officer</span>{% endif %}</td>
+        <td>{{ r.student.group|default:"—" }}</td>
+        {% for field, checked in r.cells %}
+          <td class="center"><input type="checkbox" name="{{ field }}-{{ r.student.pk }}" data-col="{{ field }}"{% if checked %} checked{% endif %}
+            aria-label="{{ field }} {{ r.student.full_name }}"></td>
+        {% endfor %}
+        <td>{% if r.missing %}<span class="err">{{ r.missing }}</span>{% else %}0{% endif %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="{{ columns|length|add:4 }}" class="muted">No enrolled students are expected at this event.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if rows %}<div class="apply"><button type="submit">Save attendance</button>
+    <span class="muted">Uniform columns record a violation (checked = violated).</span></div>{% endif %}
+</form>
+
+{% if imports %}
+<section class="card">
+  <h2>QR scan files</h2>
+  <table class="grid">
+    <thead><tr><th>File</th><th>Uploaded</th><th>By</th><th>Status</th><th>Marks added</th></tr></thead>
+    <tbody>{% for imp in imports %}
+      <tr><td><a href="{% url 'events:scan_preview' imp.pk %}">{{ imp.file_name }}</a></td><td>{{ imp.uploaded_at|date:"M j, g:i A" }}</td>
+        <td>{{ imp.uploaded_by|default:"—" }}</td><td>{{ imp.get_status_display }}</td><td>{{ imp.marks_added }}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

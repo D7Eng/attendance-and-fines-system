@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Statement · {{ student.full_name }} · DuesTrack{% endblock %}
+{% block content %}
+<div class="apply noprint"><button type="button" onclick="window.print()">Print</button> <a href="{% url 'finance:account' student.pk %}">Back to account</a></div>
+{% include "reports/_statement.html" with receipt_links=True %}
+{% endblock %}

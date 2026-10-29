@@ -17,7 +17,7 @@ class RoleTests(TestCase):
         user = User.objects.create_user("t")
         user.groups.add(Group.objects.get(name=roles.TREASURER))
         self.client.force_login(user)
-        self.assertRedirects(self.client.get(reverse("home")), reverse("roster:student_list"))
+        self.assertRedirects(self.client.get(reverse("home")), reverse("reports:dashboard"))
 
     def test_login_page_shows_privacy_notice(self):
         self.assertContains(self.client.get(reverse("login")), "RA 10173")

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ student.full_name }} · DuesTrack{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>{{ student.full_name }}</h1>
+  <span class="muted"><span class="mono">{{ student.student_no }}</span> · {{ student.get_year_level_display }}{% if student.group %} {{ student.group }}{% endif %}
+    · {{ student.term }}{% if student.is_officer %} · Officer{% endif %}{% if not student.is_enrolled %} · <b>Not enrolled</b>{% endif %}</span>
+</div>
+{% include "finance/_summary.html" %}
+<div class="apply noprint">
+  {% if can_edit_finance and acct.balance > 0 %}<a class="button" href="{% url 'finance:pay' student.pk %}">Record payment</a>{% endif %}
+  <a href="{% url 'reports:statement' student.pk %}">Printable statement</a>
+  {% if can_edit_finance and acct.credit > 0 %}<a class="button" href="{% url 'finance:refund' student.pk %}">Refund {{ acct.credit|floatformat:2|intcomma }}</a>{% endif %}
+</div>
+
+<section class="card">
+  <h2>Fines by event</h2>
+  {% if not student.is_enrolled %}<p class="muted">Not enrolled: no fines or dues.</p>{% endif %}
+  <table class="grid">
+    <thead><tr><th>Date</th><th>Event</th><th>Missing marks</th><th>Uniform</th><th class="num">Fine</th><th></th></tr></thead>
+    <tbody>
+    {% for line in acct.lines %}
+      <tr class="{% if line.waiver %}dim{% endif %}">
+        <td>{{ line.event.date|date:"M j, Y" }}</td><td>{{ line.event.name }}</td><td>{{ line.missing }}</td><td>{{ line.uniform }}</td>
+        <td class="num">{% if line.waiver %}<s>{{ line.amount|floatformat:2|intcomma }}</s> waived{% else %}{{ line.amount|floatformat:2|intcomma }}{% endif %}</td>
+        <td>{% if can_edit_finance and not line.waiver %}
+          <form method="post" action="{% url 'finance:waive' student.pk line.event.pk %}" class="inline">{% csrf_token %}
+            <input name="reason" placeholder="Waiver reason" required aria-label="Waiver reason"> <button type="submit">Waive</button></form>
+        {% elif line.waiver %}<span class="muted">{{ line.waiver.reason }}</span>{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="6" class="muted">No fines.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Payments and refunds</h2>
+  <table class="grid">
+    <thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th class="num">Amount</th><th>Note</th><th></th></tr></thead>
+    <tbody>
+    {% for p in payments %}
+      <tr class="{% if p.is_reversed %}dim{% endif %}">
+        <td class="mono"><a href="{% url 'finance:receipt' p.pk %}">{{ p.receipt_no }}</a></td>
+        <td>{{ p.recorded_at|date:"M j, Y g:i A" }}</td>
+        <td>{{ p.get_method_display }}{% if p.gcash_ref %} <span class="mono">{{ p.gcash_ref }}</span>{% endif %}</td>
+        <td class="num">{% if p.kind == "refund" %}−{% endif %}{{ p.amount|floatformat:2|intcomma }}</td>
+        <td>{{ p.note }}{% if p.is_reversed %}<div class="err">Reversed {{ p.reversed_at|date:"M j, Y" }} by {{ p.reversed_by }}: {{ p.reversal_reason }}</div>{% endif %}</td>
+        <td>{% if can_edit_finance and not p.is_reversed %}<a href="{% url 'finance:reverse' p.pk %}">Reverse</a>{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="6" class="muted">No payments yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if waivers %}
+<section class="card">
+  <h2>Waivers</h2>
+  <table class="grid">
+    <thead><tr><th>Event</th><th>Reason</th><th>By</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for w in waivers %}
+      <tr class="{% if w.revoked_at %}dim{% endif %}"><td>{{ w.event }}</td><td>{{ w.reason }}</td><td>{{ w.created_by|default:"—" }}, {{ w.created_at|date:"M j, Y" }}</td>
+        <td>{% if w.revoked_at %}Revoked {{ w.revoked_at|date:"M j, Y" }} by {{ w.revoked_by }}{% else %}Active{% endif %}</td>
+        <td>{% if can_edit_finance and not w.revoked_at %}<form method="post" action="{% url 'finance:revoke_waiver' w.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link-dark">Revoke</button></form>{% endif %}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

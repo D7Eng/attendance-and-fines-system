@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Collections · DuesTrack{% endblock %}
+{% block content %}
+{% if not term %}<section class="card"><h1>Collections</h1><p>No term has been set up yet.</p></section>{% else %}
+{% include "reports/_print_head.html" with heading="Collections report" %}
+<div class="head"><h1>Collections {{ start|date:"M j" }} to {{ end|date:"M j, Y" }}</h1>{% include "reports/_term_pick.html" %}</div>
+{% include "reports/_nav.html" %}
+<form method="get" class="filters noprint">
+  <input type="hidden" name="term" value="{{ term.pk }}">
+  <label>From <input type="date" name="from" value="{{ start|date:'Y-m-d' }}"></label>
+  <label>To <input type="date" name="to" value="{{ end|date:'Y-m-d' }}"></label>
+  <button type="submit">Show</button>
+  <button type="button" onclick="window.print()">Print</button>
+  <a href="?{{ request.GET.urlencode }}&format=csv">Download CSV</a>
+</form>
+<div class="stats">
+  <div class="stat"><span>Payments</span><b>{{ paid|floatformat:2|intcomma }}</b></div>
+  <div class="stat"><span>Refunds</span><b>{{ refunded|floatformat:2|intcomma }}</b></div>
+  <div class="stat"><span>Net</span><b>{{ net|floatformat:2|intcomma }}</b></div>
+  {% for m, t in by_method.items %}<div class="stat"><span>{{ m }}</span><b>{{ t.payment|floatformat:2|intcomma }}</b>{% if t.refund %}<small>−{{ t.refund|floatformat:2|intcomma }} refunds</small>{% endif %}</div>{% endfor %}
+</div>
+<table class="grid report">
+  <thead><tr><th>Day</th><th class="num">Payments</th><th class="num">Refunds</th></tr></thead>
+  <tbody>{% for day, t in by_day %}<tr><td>{{ day|date:"D, M j" }}</td><td class="num">{{ t.payment|floatformat:2|intcomma }}</td><td class="num">{{ t.refund|floatformat:2|intcomma }}</td></tr>{% endfor %}</tbody>
+</table>
+<h2>Entries</h2>
+<table class="grid report">
+  <thead><tr><th>Receipt</th><th>Date</th><th>Student</th><th>Method</th><th class="num">Amount</th><th>By</th></tr></thead>
+  <tbody>{% for p in entries %}
+    <tr class="{% if p.is_reversed %}dim{% endif %}"><td class="mono">{{ p.receipt_no }}{% if p.is_reversed %} (reversed){% endif %}</td><td>{{ p.recorded_at|date:"M j g:i A" }}</td>
+      <td>{{ p.student.student_no }} {{ p.student.full_name }}</td><td>{{ p.get_method_display }} {{ p.gcash_ref }}</td>
+      <td class="num">{% if p.kind == "refund" %}−{% endif %}{{ p.amount|floatformat:2|intcomma }}</td><td>{{ p.recorded_by|default:"" }}</td></tr>
+  {% empty %}<tr><td colspan="6" class="muted">No entries in this range.</td></tr>{% endfor %}</tbody>
+</table>
+<p class="muted">Reversed entries are listed but not counted.</p>
+{% endif %}
+{% endblock %}

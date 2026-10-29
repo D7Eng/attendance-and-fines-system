@@ -29,9 +29,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.humanize",
     "accounts",
     "terms",
     "roster",
+    "events",
+    "finance",
+    "reports",
+    "audit",
 ]
 
 MIDDLEWARE = [
@@ -40,6 +45,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "audit.log.RequestContextMiddleware",
+    "accounts.middleware.ForcePasswordChangeMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -90,6 +97,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+AUTHENTICATION_BACKENDS = ["accounts.backends.CaseInsensitiveModelBackend"]
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Manila"
 USE_I18N = True
@@ -110,6 +119,18 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 ROSTER_MAX_ROWS = 5000
 
+# Behind nginx (production), take the client address from X-Real-IP for lockouts and the audit log.
+TRUST_X_REAL_IP = env_bool("DJANGO_TRUST_X_REAL_IP", not DEBUG)
+
+# Encrypted backups (manage.py backup). Records are never deleted automatically.
+DUESTRACK_BACKUP_KEY = os.environ.get("DUESTRACK_BACKUP_KEY", "")
+DUESTRACK_BACKUP_DIR = os.environ.get("DUESTRACK_BACKUP_DIR", str(BASE_DIR / "backups"))
+
+# Shown in the privacy notice.
+DUESTRACK_ORG_NAME = os.environ.get("DUESTRACK_ORG_NAME", "the organization")
+DUESTRACK_PRIVACY_CONTACT = os.environ.get("DUESTRACK_PRIVACY_CONTACT", "the organization's treasurer")
+
+SESSION_COOKIE_AGE = 60 * 60 * 8
 SESSION_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 if not DEBUG:

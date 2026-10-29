@@ -15,6 +15,14 @@ ALL_ROLES = [ADMIN, TREASURER, OFFICER, STUDENT]
 # Who may see the full roster, and who may change it.
 ROSTER_VIEWERS = {ADMIN, TREASURER, OFFICER}
 ROSTER_EDITORS = {ADMIN, TREASURER}
+# Events, the attendance grid and QR scan imports.
+ATTENDANCE_EDITORS = {ADMIN, TREASURER, OFFICER}
+# Balances, payments and receipts; only the treasurer takes money, refunds, reverses and waives.
+FINANCE_VIEWERS = {ADMIN, TREASURER}
+FINANCE_EDITORS = {TREASURER}
+# Term settings and rates, and the audit log.
+SETTINGS_EDITORS = {ADMIN, TREASURER}
+AUDIT_VIEWERS = {ADMIN, TREASURER}
 
 
 def user_roles(user):

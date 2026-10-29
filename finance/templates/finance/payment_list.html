@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Payments · DuesTrack{% endblock %}
+{% block content %}
+{% if not term %}<section class="card"><h1>Payments</h1><p>No term has been set up yet.</p></section>{% else %}
+<div class="head">
+  <h1>Payments</h1>
+  <form method="get" class="term-pick">
+    <select name="term" onchange="this.form.submit()" aria-label="Term">
+      {% for t in terms %}<option value="{{ t.pk }}"{% if t.pk == term.pk %} selected{% endif %}>{{ t.name }}{% if t.is_active %} (active){% endif %}</option>{% endfor %}
+    </select>
+  </form>
+</div>
+<section class="card">
+  <form method="get" class="filters">
+    <input type="hidden" name="term" value="{{ term.pk }}">
+    <input type="search" name="find" value="{{ find }}" placeholder="Student no. or name" aria-label="Find student" autofocus>
+    <button type="submit">Open student account</button>
+  </form>
+  {% if find %}
+    {% for s in found %}<div><a href="{% url 'finance:account' s.pk %}">{{ s.student_no }} {{ s.full_name }}</a> <span class="muted">{{ s.get_year_level_display }} {{ s.group }}</span></div>
+    {% empty %}<p class="muted">No student in {{ term }} matches "{{ find }}".</p>{% endfor %}
+  {% endif %}
+</section>
+
+<form method="get" class="filters">
+  <input type="hidden" name="term" value="{{ term.pk }}">
+  <label>From <input type="date" name="from" value="{{ start|date:'Y-m-d' }}"></label>
+  <label>To <input type="date" name="to" value="{{ end|date:'Y-m-d' }}"></label>
+  <select name="method" aria-label="Method"><option value="">Cash and GCash</option>
+    {% for v, l in methods %}<option value="{{ v }}"{% if v == method %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <button type="submit">Filter</button>
+</form>
+<p>Collected <b>{{ totals.collected|floatformat:2|intcomma }}</b> · Refunded <b>{{ totals.refunded|floatformat:2|intcomma }}</b> <span class="muted">(reversed entries excluded)</span></p>
+<table class="grid">
+  <thead><tr><th>Receipt</th><th>Date</th><th>Student</th><th>Method</th><th class="num">Amount</th><th>By</th></tr></thead>
+  <tbody>
+  {% for p in page %}
+    <tr class="{% if p.is_reversed %}dim{% endif %}">
+      <td class="mono"><a href="{% url 'finance:receipt' p.pk %}">{{ p.receipt_no }}</a>{% if p.is_reversed %} <span class="tag tag-error">Reversed</span>{% endif %}</td>
+      <td>{{ p.recorded_at|date:"M j, Y g:i A" }}</td>
+      <td><a href="{% url 'finance:account' p.student_id %}">{{ p.student.student_no }} {{ p.student.full_name }}</a></td>
+      <td>{{ p.get_method_display }}{% if p.gcash_ref %} <span class="mono">{{ p.gcash_ref }}</span>{% endif %}</td>
+      <td class="num">{% if p.kind == "refund" %}−{% endif %}{{ p.amount|floatformat:2|intcomma }}</td>
+      <td>{{ p.recorded_by|default:"—" }}</td>
+    </tr>
+  {% empty %}<tr><td colspan="6" class="muted">No payments match.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if page.has_other_pages %}<nav class="pager">
+  {% if page.has_previous %}<a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.previous_page_number }}">Previous</a>{% endif %}
+  <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.next_page_number }}">Next</a>{% endif %}
+</nav>{% endif %}
+{% endif %}
+{% endblock %}

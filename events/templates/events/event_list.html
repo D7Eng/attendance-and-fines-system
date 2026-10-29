@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Events · DuesTrack{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Events</h1>
+  <span>
+    {% if terms %}<form method="get" class="term-pick" style="display:inline">
+      <select name="term" onchange="this.form.submit()" aria-label="Term">
+        {% for t in terms %}<option value="{{ t.pk }}"{% if t.pk == term.pk %} selected{% endif %}>{{ t.name }}{% if t.is_active %} (active){% endif %}</option>{% endfor %}
+      </select>
+    </form>{% endif %}
+    <a href="{% url 'events:event_add' %}">New event</a>
+  </span>
+</div>
+<table class="grid">
+  <thead><tr><th>Date</th><th>Event</th><th>Sessions</th><th>Years</th><th>Scan files</th></tr></thead>
+  <tbody>
+  {% for e in events %}
+    <tr>
+      <td>{{ e.date|date:"D, M j, Y" }}</td>
+      <td><a href="{% url 'events:attendance' e.pk %}">{{ e.name }}</a>{% if e.notes %}<div class="muted">{{ e.notes }}</div>{% endif %}</td>
+      <td>{% if e.has_am %}AM{% endif %}{% if e.has_am and e.has_pm %} + {% endif %}{% if e.has_pm %}PM{% endif %}</td>
+      <td>{{ e.year_levels_display }}</td>
+      <td>{{ e.scan_count }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5" class="muted">No events yet{% if term %} in {{ term }}{% endif %}.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

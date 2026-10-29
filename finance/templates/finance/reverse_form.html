@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Reverse {{ payment.receipt_no }} · DuesTrack{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Reverse {{ payment.receipt_no }}</h1>
+  <p>{{ payment.get_kind_display }} of <b>{{ payment.amount|floatformat:2|intcomma }}</b> from {{ payment.student.full_name }} on {{ payment.recorded_at|date:"M j, Y" }}.</p>
+  <p class="muted">Use this for an entry made by mistake (wrong student, wrong amount, duplicate). The entry stays on record marked
+     as reversed and no longer counts; its receipt number is not reused. A GCash reference on it can be used again.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="danger">Reverse</button>
+    <a href="{% url 'finance:account' payment.student_id %}">Cancel</a>
+  </form>
+</section>
+{% endblock %}

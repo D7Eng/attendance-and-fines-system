@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Settings · DuesTrack{% endblock %}
+{% block content %}
+<div class="head"><h1>Terms and rates</h1><a href="{% url 'terms:term_add' %}">New term</a></div>
+<p class="muted">Every term keeps its own fine and dues rates. Changing a rate updates every balance in that term, since fines are worked out from attendance.</p>
+<table class="grid">
+  <thead><tr><th>Term</th><th>Dates</th><th class="num">Absence (member / officer)</th><th class="num">Uniform total (member / officer)</th><th class="num">Dues</th><th>Cutoff</th><th>Dues rates</th></tr></thead>
+  <tbody>{% for t in terms %}
+    <tr><td><a href="{% url 'terms:term_edit' t.pk %}">{{ t.name }}</a>{% if t.is_active %} <span class="tag tag-new">Active</span>{% endif %}</td>
+      <td>{{ t.start_date|date:"M j, Y"|default:"—" }} to {{ t.end_date|date:"M j, Y"|default:"—" }}</td>
+      <td class="num">{{ t.absence_fine_regular|floatformat:2 }} / {{ t.absence_fine_officer|floatformat:2 }}</td>
+      <td class="num">{{ t.uniform_total_regular|floatformat:2 }} / {{ t.uniform_total_officer|floatformat:2 }}</td>
+      <td class="num">{{ t.weekly_dues|floatformat:2 }} × {{ t.dues_weeks }}</td>
+      <td>{{ t.am_pm_cutoff|time:"g:i A" }}</td>
+      <td>{% for r in t.dues_rates.all %}<div>{{ r.label }}: {{ r.weekly_amount|floatformat:2 }}/wk</div>{% empty %}<span class="muted">None</span>{% endfor %}</td></tr>
+  {% empty %}<tr><td colspan="7" class="muted">No terms yet.</td></tr>{% endfor %}</tbody>
+</table>
+{% endblock %}

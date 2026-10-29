@@ -1,0 +1,3 @@
+<nav class="tabs noprint"><a href="{% url 'reports:balances' %}?term={{ term.pk }}"{% if request.resolver_match.url_name == "balances" %} class="active"{% endif %}>Balances</a>
+  <a href="{% url 'reports:collections' %}?term={{ term.pk }}"{% if request.resolver_match.url_name == "collections" %} class="active"{% endif %}>Collections</a>
+  <a href="{% url 'events:event_list' %}?term={{ term.pk }}">Event reports (open an event)</a></nav>

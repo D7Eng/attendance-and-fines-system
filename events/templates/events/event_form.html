@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{% if event %}Edit event{% else %}New event{% endif %} · DuesTrack{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{% if event %}Edit {{ event.name }}{% else %}New event{% endif %}</h1>
+  <p class="muted">Each session has an IN and an OUT mark. A missing mark is fined at the term's absence rate.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+    <a href="{% if event %}{% url 'events:attendance' event.pk %}{% else %}{% url 'events:event_list' %}{% endif %}">Cancel</a>
+  </form>
+  {% if event %}
+  <form method="post" action="{% url 'events:event_delete' event.pk %}" class="apply">
+    {% csrf_token %}<button type="submit" class="danger" onclick="return confirm('Delete this event?')">Delete event</button>
+    <span class="muted">Only events with no attendance can be deleted.</span>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

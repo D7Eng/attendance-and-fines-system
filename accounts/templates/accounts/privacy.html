@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Privacy notice · DuesTrack{% endblock %}
+{% block content %}
+<section class="card privacy">
+  <h1>Privacy notice</h1>
+  <p>DuesTrack is the records system {{ org_name }} uses for attendance, fines, weekly dues and payments. Your
+     personal information is processed in line with the Data Privacy Act of 2012 (Republic Act No. 10173, "RA 10173"), its
+     implementing rules, and issuances of the National Privacy Commission.</p>
+
+  <h2>What we keep</h2>
+  <ul>
+    <li>Your student number, name, year level, section or group, whether you are an officer, and your enrollment status, taken from the class roster.</li>
+    <li>Your attendance marks at organization events (IN and OUT, from QR scans or officers' entries) and any uniform violations.</li>
+    <li>Fines, waivers, dues, payments and refunds, including GCash reference numbers. No screenshots or photos are collected.</li>
+    <li>For your login: a securely hashed password (never readable), and a log of logins and changes with the address used.</li>
+  </ul>
+
+  <h2>Why</h2>
+  <p>Only to take attendance, compute fines and dues under the organization's rules, record and receipt payments, and
+     give you and the officers an accurate account. The information is not used for anything else, not sold, and not
+     shared outside the organization unless the law requires it.</p>
+
+  <h2>Who can see it</h2>
+  <ul>
+    <li><b>You</b> can see your own record, statement and receipts after logging in. You cannot see anyone else's.</li>
+    <li><b>Officers</b> see the roster and attendance so they can take attendance. They cannot see payments.</li>
+    <li><b>The treasurer</b> sees and records fines, waivers, dues and payments.</li>
+    <li><b>Administrators</b> set the system up.</li>
+  </ul>
+  <p>Apart from the login page and this notice, every page requires a login, connections are encrypted (HTTPS), and every change to attendance,
+     money and settings is written to an audit log that cannot be edited.</p>
+
+  <h2>How long</h2>
+  <p>Records are kept as the organization's financial records after the term ends and are not deleted automatically, so
+     past balances and receipts can always be checked. Daily backups are encrypted.</p>
+
+  <h2>Your rights</h2>
+  <p>You may ask to see the information kept about you, have mistakes corrected, object to processing, and complain to
+     the National Privacy Commission. To use these rights or ask a question, contact {{ privacy_contact }}.</p>
+</section>
+{% endblock %}

@@ -22,8 +22,9 @@ class Student(models.Model):
     group = models.CharField(max_length=50, blank=True, help_text="Section or block.")
     is_officer = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=ENROLLED)
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="student"
+    # One login per person, shared by their roster records across terms.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="student_records"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
