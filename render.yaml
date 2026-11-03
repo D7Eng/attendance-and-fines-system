@@ -1,0 +1,38 @@
+# Render Blueprint: the DuesTrack website in Singapore, on Render's free plan, using a free
+# PostgreSQL database from Neon (also in Singapore). In Render choose New > Blueprint, pick this
+# repository, and fill in the values it asks for (DATABASE_URL is Neon's connection string).
+#
+# The free plan sleeps after 15 idle minutes and takes about a minute to wake. To keep it always on,
+# change the plan in the Render dashboard to Starter (about US$7/month); nothing else changes.
+services:
+  - type: web
+    name: duestrack
+    runtime: python
+    region: singapore
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    # On every start: update the database, create the first Treasurer if there is no administrator
+    # yet (never changes an existing account), then serve the site.
+    startCommand: >-
+      python manage.py migrate --noinput &&
+      python manage.py ensure_first_user &&
+      gunicorn duestrack.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --access-logfile -
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      # Asked once when the Blueprint is created.
+      - key: DATABASE_URL
+        sync: false
+      - key: DUESTRACK_FIRST_USERNAME
+        sync: false
+      - key: DUESTRACK_FIRST_PASSWORD
+        sync: false
+      - key: DUESTRACK_ORG_NAME
+        sync: false
+      - key: DUESTRACK_PRIVACY_CONTACT
+        sync: false

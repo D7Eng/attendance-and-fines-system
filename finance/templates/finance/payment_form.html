@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Record payment · DuesTrack{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Record payment</h1>
+  <p><b>{{ student.full_name }}</b> <span class="mono">{{ student.student_no }}</span><br>
+     Balance: <b>{{ acct.balance|floatformat:2|intcomma }}</b></p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Record and print receipt</button>
+    <a href="{% url 'finance:account' student.pk %}">Cancel</a>
+  </form>
+  <p class="muted">Payments above the balance are rejected. GCash payments are checked by reference number only.</p>
+</section>
+{% endblock %}

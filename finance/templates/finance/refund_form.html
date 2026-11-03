@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Refund · DuesTrack{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Refund</h1>
+  <p><b>{{ student.full_name }}</b> <span class="mono">{{ student.student_no }}</span><br>
+     Credit available: <b>{{ acct.credit|floatformat:2|intcomma }}</b></p>
+  <p class="muted">A refund returns money the student overpaid, for example after a waiver or after they stopped being enrolled.
+     To void a payment that was entered by mistake, reverse it instead.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Record refund</button>
+    <a href="{% url 'finance:account' student.pk %}">Cancel</a>
+  </form>
+</section>
+{% endblock %}

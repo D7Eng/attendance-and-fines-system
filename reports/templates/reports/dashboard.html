@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Dashboard · DuesTrack{% endblock %}
+{% block content %}
+{% if not term %}
+<div class="head"><h1>Dashboard</h1></div>
+<section class="card empty"><p>No term has been set up yet.</p>{% if can_edit_settings %}<a class="button" href="{% url 'terms:term_add' %}">Set up a term</a>{% endif %}</section>
+{% else %}
+<div class="head">
+  <div><div><p class="eyebrow">{{ term }}</p><h1>Dashboard</h1></div></div>
+  {% include "reports/_term_pick.html" %}
+</div>
+<p class="page-sub">Events up to {{ today|date:"M j, Y" }} · {{ overall.students }} student{{ overall.students|pluralize }} · {{ events_held }} event{{ events_held|pluralize }} held</p>
+
+{% if can_view_finance %}
+<div class="stats kpi">
+  <div class="stat"><span class="stat-ic"><svg><use href="#i-receipt"></use></svg></span><span>Total billed</span><b>₱{{ overall.billed|floatformat:2|intcomma }}</b>
+    <small>Fines {{ overall.fines|floatformat:2|intcomma }} · Dues {{ overall.dues|floatformat:2|intcomma }}</small></div>
+  <div class="stat"><span class="stat-ic ok"><svg><use href="#i-cash"></use></svg></span><span>Collected (net)</span><b>₱{{ overall.collected_net|floatformat:2|intcomma }}</b>
+    <small>{% if overall.refunded %}{{ overall.refunded|floatformat:2|intcomma }} refunded{% else %}After refunds and reversals{% endif %}</small></div>
+  <div class="stat owe"><span class="stat-ic bad"><svg><use href="#i-alert"></use></svg></span><span>Outstanding</span><b>₱{{ overall.outstanding|floatformat:2|intcomma }}</b>
+    <small>{% if overall.credit %}{{ overall.credit|floatformat:2|intcomma }} credit to refund{% elif overall.waived %}{{ overall.waived|floatformat:2|intcomma }} waived{% else %}Still to be paid{% endif %}</small></div>
+  <div class="stat"><span class="stat-ic warn"><svg><use href="#i-chart"></use></svg></span><span>Collection rate</span><b>{{ overall.collection_rate|floatformat:1 }}%</b>
+    <div class="meter" role="img" aria-label="{{ overall.collection_rate|floatformat:0 }}% collected"><i style="width:{{ overall.collection_rate|floatformat:0 }}%"></i></div></div>
+</div>
+{% else %}
+<div class="stats kpi">
+  <div class="stat"><span class="stat-ic"><svg><use href="#i-users"></use></svg></span><span>Students</span><b>{{ overall.students }}</b><small>Enrolled this term</small></div>
+  <div class="stat"><span class="stat-ic"><svg><use href="#i-calendar"></use></svg></span><span>Events held</span><b>{{ events_held }}</b><small>Up to today</small></div>
+  <div class="stat"><span class="stat-ic ok"><svg><use href="#i-check"></use></svg></span><span>Complete attendance</span><b>{{ attendance_rate|floatformat:1 }}%</b>
+    <div class="meter"><i style="width:{{ attendance_rate|floatformat:0 }}%"></i></div></div>
+  <div class="stat"><span class="stat-ic warn"><svg><use href="#i-alert"></use></svg></span><span>Missing marks</span><b>{{ overall.absences }}</b><small>{{ overall.uniform_violations }} uniform violation{{ overall.uniform_violations|pluralize }}</small></div>
+</div>
+{% endif %}
+
+<div class="dash-grid">
+  {% if can_view_finance %}
+  <section class="card">
+    <div class="card-head"><div><h2>Billed and collected by group</h2><p>Fines and dues billed to each section, against what it has paid.</p></div>
+      <div class="legend"><span><i class="sw-fines"></i>Fines</span><span><i class="sw-dues"></i>Dues</span><span><i class="sw-collected"></i>Collected</span></div></div>
+    {% if group_chart %}
+    <div class="hbars">
+      {% for g in group_chart %}
+      <div class="hbar" tabindex="0">
+        <div class="hbar-label"><a href="{% url 'reports:balances' %}?term={{ term.pk }}&year={{ g.year }}{% if g.group %}&group={{ g.group|urlencode }}{% endif %}">{{ g.label }}</a><small>{{ g.t.students }} student{{ g.t.students|pluralize }}</small></div>
+        <div class="hbar-tracks">
+          <div class="track">{% if g.t.fines %}<i class="sw-fines" style="width:{{ g.fines_pct|floatformat:2 }}%"></i>{% endif %}{% if g.t.dues %}<i class="sw-dues" style="width:{{ g.dues_pct|floatformat:2 }}%"></i>{% endif %}</div>
+          <div class="track thin">{% if g.collected_pct %}<i class="sw-collected" style="width:{{ g.collected_pct|floatformat:2 }}%"></i>{% endif %}</div>
+        </div>
+        <div class="hbar-val"><b>{{ g.t.collected_net|floatformat:0|intcomma }}</b><small>of {{ g.t.billed|floatformat:0|intcomma }}</small></div>
+        <div class="tip" role="tooltip"><b>{{ g.label }}</b><br>
+          <i class="sw-fines"></i>Fines {{ g.t.fines|floatformat:2|intcomma }}<br>
+          <i class="sw-dues"></i>Dues {{ g.t.dues|floatformat:2|intcomma }}<br>
+          <i class="sw-collected"></i>Collected {{ g.t.collected_net|floatformat:2|intcomma }}<br>
+          Outstanding {{ g.t.outstanding|floatformat:2|intcomma }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="empty">No students yet.</p>{% endif %}
+    <div class="card-foot"><a href="{% url 'reports:balances' %}?term={{ term.pk }}">Balances report</a><a href="{% url 'reports:collections' %}?term={{ term.pk }}">Collections report</a></div>
+  </section>
+  {% else %}
+  <section class="card">
+    <div class="card-head"><div><h2>Attendance by event</h2><p>Share of expected students with every mark complete.</p></div></div>
+    {% include "reports/_event_rates.html" %}
+  </section>
+  {% endif %}
+
+  <div class="stack">
+    {% if can_view_finance %}
+    <section class="card">
+      <div class="card-head"><div><h2>Collections, last 14 days</h2><p>Payments received, after reversals.</p></div><span class="chart-total">₱{{ daily_total|floatformat:2|intcomma }}</span></div>
+      <div class="cols" role="img" aria-label="Daily collections for the last 14 days">
+        {% for d in daily %}<div class="col{% if not d.total %} zero{% endif %}" tabindex="0"><i style="height:{% if d.total %}{{ d.pct|floatformat:2 }}%{% else %}2px{% endif %}"></i>
+          <div class="tip"><b>{{ d.day|date:"D, M j" }}</b><br>{{ d.total|floatformat:2|intcomma }} · {{ d.n }} receipt{{ d.n|pluralize }}</div></div>{% endfor %}
+      </div>
+      <div class="col-axis">{% for d in daily %}<span>{% if forloop.first or forloop.last or forloop.counter == 7 %}{{ d.day|date:"M j" }}{% endif %}</span>{% endfor %}</div>
+    </section>
+    {% endif %}
+    <section class="card">
+      <div class="card-head"><div><h2>Recent activity</h2></div>{% if can_view_audit %}<a class="small" href="{% url 'audit:log' %}">View all</a>{% endif %}</div>
+      {% if can_view_finance %}
+      <ul class="feed">{% for p in recent %}
+        <li><span class="dot {% if p.kind == 'refund' or p.is_reversed %}bad{% else %}ok{% endif %}"><svg><use href="#i-{% if p.kind == 'refund' %}logout{% else %}receipt{% endif %}"></use></svg></span>
+          <div class="body"><p><a href="{% url 'finance:receipt' p.pk %}" class="mono">{{ p.receipt_no }}</a> · {{ p.student.full_name }}{% if p.is_reversed %} <span class="tag tag-error">Reversed</span>{% endif %}</p>
+            <small>{{ p.get_method_display }} · {{ p.recorded_at|naturaltime }}</small></div>
+          <span class="amt">{% if p.kind == "refund" %}−{% endif %}{{ p.amount|floatformat:2|intcomma }}</span></li>
+      {% empty %}<li class="empty">No payments yet.</li>{% endfor %}</ul>
+      {% else %}
+      <ul class="feed">{% for e in events|slice:":6" %}
+        <li><span class="dot"><svg><use href="#i-calendar"></use></svg></span>
+          <div class="body"><p><a href="{% url 'reports:event_report' e.event.pk %}">{{ e.event.name }}</a></p><small>{{ e.event.date|date:"D, M j" }} · {{ e.missing }} missing mark{{ e.missing|pluralize }}</small></div>
+          <span class="amt">{{ e.attendance_rate|floatformat:0 }}%</span></li>
+      {% empty %}<li class="empty">No events held yet.</li>{% endfor %}</ul>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+{% if can_view_finance %}
+<div class="two">
+  <section class="card">
+    <div class="card-head"><div><h2>Attendance by event</h2><p>Share of expected students with every mark complete.</p></div></div>
+    {% include "reports/_event_rates.html" %}
+  </section>
+  {% if activity %}
+  <section class="card">
+    <div class="card-head"><div><h2>Audit trail</h2><p>Latest changes by any user.</p></div><a class="small" href="{% url 'audit:log' %}">Open audit log</a></div>
+    <ul class="feed">{% for a in activity %}
+      <li><span class="dot"><svg><use href="#i-activity"></use></svg></span>
+        <div class="body"><p>{{ a.summary }}</p><small>{{ a.actor_name|default:"System" }} · {{ a.at|naturaltime }}</small></div></li>
+    {% endfor %}</ul>
+  </section>
+  {% endif %}
+</div>
+{% endif %}
+
+<section class="card">
+  <div class="card-head"><div><h2>By year level</h2><p>{% if can_view_finance %}Attendance and money totals{% else %}Attendance totals{% endif %} for each year.</p></div></div>
+  <div class="table-wrap"><table class="grid">
+    <thead><tr><th>Year</th><th class="num">Students</th><th class="num">Missing marks</th><th class="num">Uniform</th>
+      {% if can_view_finance %}<th class="num">Fines</th><th class="num">Dues</th><th class="num">Paid</th><th class="num">Outstanding</th>{% endif %}</tr></thead>
+    <tbody>{% for y, label, t in by_year %}
+      <tr><td>{% if can_view_finance %}<a href="{% url 'reports:balances' %}?term={{ term.pk }}&year={{ y }}">{{ label }}</a>{% else %}{{ label }}{% endif %}</td>
+        <td class="num">{{ t.students }}</td><td class="num">{{ t.absences }}</td><td class="num">{{ t.uniform_violations }}</td>
+        {% if can_view_finance %}<td class="num">{{ t.fines|floatformat:2|intcomma }}</td><td class="num">{{ t.dues|floatformat:2|intcomma }}</td>
+        <td class="num">{{ t.paid|floatformat:2|intcomma }}</td><td class="num">{{ t.outstanding|floatformat:2|intcomma }}</td>{% endif %}</tr>
+    {% empty %}<tr><td colspan="8" class="muted">No students yet.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+<section class="card">
+  <div class="card-head"><div><h2>Recent events</h2><p>The last ten events held this term.</p></div>{% if can_take_attendance %}<a class="small" href="{% url 'events:event_list' %}?term={{ term.pk }}">All events</a>{% endif %}</div>
+  <div class="table-wrap"><table class="grid">
+    <thead><tr><th>Date</th><th>Event</th><th class="num">Expected</th><th class="num">Complete</th><th class="num">Missing marks</th><th class="num">Uniform</th>{% if can_view_finance %}<th class="num">Fines</th>{% endif %}</tr></thead>
+    <tbody>{% for e in events %}
+      <tr><td class="nowrap">{{ e.event.date|date:"M j" }}</td><td><a href="{% url 'reports:event_report' e.event.pk %}">{{ e.event.name }}</a></td>
+        <td class="num">{{ e.expected }}</td><td class="num">{{ e.complete }} <span class="muted">({{ e.attendance_rate|floatformat:0 }}%)</span></td>
+        <td class="num">{{ e.missing }}</td><td class="num">{{ e.uniform }}</td>{% if can_view_finance %}<td class="num">{{ e.fines|floatformat:2|intcomma }}</td>{% endif %}</tr>
+    {% empty %}<tr><td colspan="7" class="muted">No events held yet.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endif %}
+{% endblock %}

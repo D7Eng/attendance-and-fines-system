@@ -1,0 +1,7 @@
+{% load humanize %}
+<div class="stats">
+  <div class="stat"><span>Fines</span><b>{{ acct.fines|floatformat:2|intcomma }}</b>{% if acct.waived %}<small>{{ acct.waived|floatformat:2|intcomma }} waived</small>{% endif %}</div>
+  <div class="stat"><span>Dues</span><b>{{ acct.dues|floatformat:2|intcomma }}</b></div>
+  <div class="stat"><span>Paid</span><b>{{ acct.paid|floatformat:2|intcomma }}</b>{% if acct.refunded %}<small>{{ acct.refunded|floatformat:2|intcomma }} refunded</small>{% endif %}</div>
+  <div class="stat {% if acct.balance > 0 %}owe{% endif %}"><span>{% if acct.balance < 0 %}Credit{% else %}Balance{% endif %}</span><b>{% if acct.balance < 0 %}{{ acct.credit|floatformat:2|intcomma }}{% else %}{{ acct.balance|floatformat:2|intcomma }}{% endif %}</b></div>
+</div>
