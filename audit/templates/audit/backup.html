@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Download a backup · DuesTrack{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Download a backup</h1>
+  <p>This downloads every record in DuesTrack (all terms, students, attendance, payments, the audit log) as one file,
+     locked with the password you choose here. Keep the file somewhere safe off this website, for example a private
+     cloud drive, and do it at least once a month and at the end of each term.</p>
+  <p class="muted">The file holds students' personal and financial data. Store it only where officers who may see that
+     data can reach it. Nobody can open it without the password, and a lost password cannot be recovered.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Download backup</button>
+    <a href="{% url 'audit:log' %}">Cancel</a>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,10 @@
+# /etc/systemd/system/duestrack-backup.service
+[Unit]
+Description=DuesTrack encrypted database backup
+
+[Service]
+Type=oneshot
+User=duestrack
+WorkingDirectory=/srv/duestrack
+EnvironmentFile=/etc/duestrack.env
+ExecStart=/srv/duestrack/.venv/bin/python manage.py backup

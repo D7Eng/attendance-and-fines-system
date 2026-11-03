@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Import QR scans · DuesTrack{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Import QR scans</h1>
+  <p>{{ event }} · AM/PM cutoff {{ event.term.am_pm_cutoff|time:"g:i A" }}</p>
+  <p class="muted">The file needs a column holding the scanned code (Student No., Content, Code or Data) and, for automatic
+     marks, a Timestamp column (or Date and Time). An optional Type column with IN/OUT is used when present.
+     Scans are matched by student number; when only a name matches, you confirm the match on the next page.
+     Importing never removes marks, and the same file cannot be applied twice.</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Preview</button>
+    <a href="{% url 'events:attendance' event.pk %}">Cancel</a>
+  </form>
+</section>
+{% endblock %}

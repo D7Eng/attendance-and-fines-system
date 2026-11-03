@@ -1,0 +1,11 @@
+# /etc/systemd/system/duestrack-backup.timer
+# Enable with: systemctl enable --now duestrack-backup.timer
+[Unit]
+Description=Daily DuesTrack backup
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 Asia/Manila
+Persistent=true
+
+[Install]
+WantedBy=timers.target
