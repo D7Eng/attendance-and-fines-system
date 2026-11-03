@@ -1,6 +1,7 @@
 # Render Blueprint: the DuesTrack website in Singapore, on Render's free plan, using a free
-# PostgreSQL database from Neon (also in Singapore). In Render choose New > Blueprint, pick this
-# repository, and fill in the values it asks for (DATABASE_URL is Neon's connection string).
+# PostgreSQL database from Supabase (also in Singapore). In Render choose New > Blueprint, pick this
+# repository, and fill in the values it asks for. DATABASE_URL is Supabase's "Session pooler"
+# connection string (the direct one is IPv6-only, which Render cannot reach).
 #
 # The free plan sleeps after 15 idle minutes and takes about a minute to wake. To keep it always on,
 # change the plan in the Render dashboard to Starter (about US$7/month); nothing else changes.

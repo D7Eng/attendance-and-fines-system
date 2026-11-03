@@ -84,9 +84,14 @@ if os.environ.get("DATABASE_URL"):
     DATABASES = {
         "default": dj_database_url.parse(os.environ["DATABASE_URL"], conn_max_age=600, conn_health_checks=True)
     }
-    # Neon's pooled address ("-pooler") goes through PgBouncer, which cannot keep server-side cursors.
-    if "-pooler." in DATABASES["default"].get("HOST", ""):
-        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+    # Transaction-mode poolers (Neon's "-pooler" address, Supabase's pooler on port 6543) cannot keep
+    # server-side cursors open between queries.
+    _db = DATABASES["default"]
+    if "-pooler." in _db.get("HOST", "") or str(_db.get("PORT", "")) == "6543":
+        _db["DISABLE_SERVER_SIDE_CURSORS"] = True
+    # Hosted databases require encryption; ask for it unless the address already says.
+    if _db.get("HOST") not in ("localhost", "127.0.0.1", ""):
+        _db.setdefault("OPTIONS", {}).setdefault("sslmode", "require")
 elif os.environ.get("POSTGRES_DB"):
     DATABASES = {
         "default": {
