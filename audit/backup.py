@@ -6,7 +6,9 @@ DUESTRACK_BACKUP_KEY. Without the key a backup cannot be read, so keep a
 copy of the key somewhere other than the server.
 """
 
+import base64
 import gzip
+import hashlib
 import io
 import os
 from pathlib import Path
@@ -19,6 +21,21 @@ from django.utils import timezone
 
 EXCLUDE = ["contenttypes", "auth.permission", "sessions.session"]
 SUFFIX = ".json.gz.enc"
+# Downloaded backups are locked with a password the treasurer types instead of the server key:
+# MAGIC + 16-byte salt + Fernet token, with the Fernet key derived from the password by scrypt.
+MAGIC = b"DUESTRACK-PW1\n"
+MIN_PASSPHRASE = 10
+
+
+def _passphrase_key(passphrase, salt):
+    raw = hashlib.scrypt(passphrase.encode("utf-8"), salt=salt, n=2**15, r=8, p=1, maxmem=64 * 1024 * 1024, dklen=32)
+    return base64.urlsafe_b64encode(raw)
+
+
+def passphrase_backup(passphrase):
+    """The whole database, gzipped and encrypted with a password, as bytes for download."""
+    salt = os.urandom(16)
+    return MAGIC + salt + Fernet(_passphrase_key(passphrase, salt)).encrypt(gzip.compress(dump_database()))
 
 
 def fernet(key=None):
@@ -49,10 +66,24 @@ def write_backup(directory=None, key=None):
     return path
 
 
-def read_backup(path, key=None):
-    """Decrypt a backup file and return the JSON fixture bytes."""
+def is_passphrase_backup(path):
+    with open(path, "rb") as f:
+        return f.read(len(MAGIC)) == MAGIC
+
+
+def read_backup(path, key=None, passphrase=None):
+    """Decrypt a backup file (server key, or the password of a downloaded one) and return the JSON fixture."""
+    blob = Path(path).read_bytes()
+    if blob.startswith(MAGIC):
+        if not passphrase:
+            raise CommandError("This is a downloaded backup: give the password it was downloaded with.")
+        salt, token = blob[len(MAGIC) : len(MAGIC) + 16], blob[len(MAGIC) + 16 :]
+        try:
+            return gzip.decompress(Fernet(_passphrase_key(passphrase, salt)).decrypt(token))
+        except InvalidToken as exc:
+            raise CommandError("Wrong password for this backup.") from exc
     try:
-        return gzip.decompress(fernet(key).decrypt(Path(path).read_bytes()))
+        return gzip.decompress(fernet(key).decrypt(blob))
     except InvalidToken as exc:
         raise CommandError("This backup cannot be decrypted with the given key.") from exc
 

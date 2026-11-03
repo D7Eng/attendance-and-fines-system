@@ -166,6 +166,31 @@ class BackupTests(TestCase):
         with override_settings(DUESTRACK_BACKUP_KEY=""), self.assertRaisesMessage(CommandError, "DUESTRACK_BACKUP_KEY"):
             call_command("backup")
 
+    def test_download_backup_locked_with_password(self):
+        self.client.force_login(make_user("t", roles.TREASURER))
+        url = reverse("audit:backup")
+        self.assertEqual(self.client.get(url).status_code, 200)
+        bad = self.client.post(url, {"password": "long-password-1", "confirm": "different-pass-1"})
+        self.assertEqual(bad.status_code, 200)
+        self.assertNotIn("Content-Disposition", bad)
+        resp = self.client.post(url, {"password": "long-password-1", "confirm": "long-password-1"})
+        self.assertIn("attachment", resp["Content-Disposition"])
+        self.assertNotIn(b"Cruz", resp.content)
+        self.assertTrue(AuditLog.objects.filter(action="backup", summary__contains="downloaded").exists())
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.backup"
+            path.write_bytes(resp.content)
+            with self.assertRaisesMessage(CommandError, "Wrong password"):
+                backup.read_backup(path, passphrase="wrong-password")
+            Student.objects.all().delete()
+            out = open("/dev/null", "w")
+            call_command("restore_backup", str(path), load=True, password="long-password-1", stdout=out)
+        self.assertTrue(Student.objects.filter(student_no="1-001").exists())
+
+    def test_officer_cannot_download_backup(self):
+        self.client.force_login(make_user("o", roles.OFFICER))
+        self.assertEqual(self.client.get(reverse("audit:backup")).status_code, 403)
+
 
 class NoPublicPagesTests(TestCase):
     PUBLIC = {"login", "privacy", "logout"}
