@@ -84,6 +84,9 @@ if os.environ.get("DATABASE_URL"):
     DATABASES = {
         "default": dj_database_url.parse(os.environ["DATABASE_URL"], conn_max_age=600, conn_health_checks=True)
     }
+    # Neon's pooled address ("-pooler") goes through PgBouncer, which cannot keep server-side cursors.
+    if "-pooler." in DATABASES["default"].get("HOST", ""):
+        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 elif os.environ.get("POSTGRES_DB"):
     DATABASES = {
         "default": {

@@ -188,27 +188,30 @@ folder off the server too (for example with `rclone` to cloud storage).
 To restore into a fresh database: `python manage.py migrate`, then
 `python manage.py restore_backup FILE --load`. `--output data.json` only decrypts it.
 
-## Hosting on Render (no server to manage)
+## Hosting on Render + Neon (free, no server to manage)
 
-`render.yaml` is a Render Blueprint: a web service and a PostgreSQL database, both in Singapore, set up from
-the browser with **New > Blueprint**. Render serves HTTPS on a `*.onrender.com` address (a custom domain can
-be added later). It deploys the `main` branch again on every push.
+`render.yaml` is a Render Blueprint for the website, in Singapore, on Render's free plan. The database is a
+free [Neon](https://neon.com) PostgreSQL project, also in Singapore; its connection string goes in
+`DATABASE_URL` when the Blueprint asks. Render serves HTTPS on a `*.onrender.com` address and deploys the
+`main` branch again on every push.
 
-- Plans: web service `0.5c-512mb` (Starter, about US$7/month, always on) and database `0.1c-256mb` (about
-  US$6/month). Free plans are not used: a free web service sleeps when idle and a free database is deleted
-  after a few weeks. Paid databases get daily backups and a few days of point-in-time recovery from Render.
-- Before each new version goes live, `migrate` updates the database and `ensure_first_user` creates the first
-  Treasurer (also a superuser) from `DUESTRACK_FIRST_USERNAME` and `DUESTRACK_FIRST_PASSWORD` if there is no
-  superuser yet. That password is temporary: the first login must change it. Once an administrator exists the
-  command does nothing, so it never resets a password.
-- Static files are served by WhiteNoise; `DATABASE_URL` comes from the database; `RENDER_EXTERNAL_HOSTNAME`
-  is added to the allowed hosts automatically. Set `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS`
-  too if you add a custom domain.
+- The free website sleeps after 15 idle minutes and takes about a minute to wake. Switching the service to
+  Starter (about US$7/month) in the Render dashboard keeps it always on; nothing else changes.
+- Neon's free plan has 1 GB of storage, scales to zero when idle, does not expire, and keeps 6 hours of
+  history for restores. Download a backup from the app regularly (below).
+- On every start, `migrate` updates the database and `ensure_first_user` creates the first Treasurer (also a
+  superuser) from `DUESTRACK_FIRST_USERNAME` and `DUESTRACK_FIRST_PASSWORD` if there is no superuser yet. That
+  password is temporary: the first login must change it. Once an administrator exists the command does
+  nothing, so it never resets a password.
+- Static files are served by WhiteNoise. `RENDER_EXTERNAL_HOSTNAME` is added to the allowed hosts
+  automatically; set `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` too if you add a custom domain.
+  A Neon pooled (`-pooler`) address works: server-side cursors are turned off for it.
 - The client address for lockouts and the audit log comes from Cloudflare's `True-Client-IP` /
   `CF-Connecting-IP`, since Render's `X-Forwarded-For` can be forged by the client. Override with
   `DJANGO_CLIENT_IP_HEADERS` (comma-separated `request.META` names) if needed.
-- The `backup` command writes to the service's own disk, which Render wipes on each deploy, so rely on
-  Render's database backups there, or download a backup from the Render dashboard now and then.
+- Render's disk is wiped on each deploy, so the `backup` command is not useful there. Use **Audit log >
+  Download a backup** instead: Treasurers and Admins download the whole database encrypted with a password they
+  choose. Restore with `manage.py restore_backup FILE --load` (it asks for the password).
 
 ## Production on your own server
 
