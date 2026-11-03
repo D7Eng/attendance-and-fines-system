@@ -1,0 +1,42 @@
+# Render Blueprint: one web service and one PostgreSQL database, both in Singapore.
+# In Render choose New > Blueprint, pick this repository, and fill in the values it asks for.
+services:
+  - type: web
+    name: duestrack
+    runtime: python
+    region: singapore
+    plan: 0.5c-512mb            # Render "Starter", about US$7/month; always on (the free plan sleeps)
+    branch: main
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    # Runs before each new version goes live: update the database, then create the first
+    # Treasurer if there is no administrator yet (never changes an existing account).
+    preDeployCommand: python manage.py migrate --noinput && python manage.py ensure_first_user
+    startCommand: gunicorn duestrack.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --access-logfile -
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: duestrack-db
+          property: connectionString
+      # Asked once when the Blueprint is created.
+      - key: DUESTRACK_FIRST_USERNAME
+        sync: false
+      - key: DUESTRACK_FIRST_PASSWORD
+        sync: false
+      - key: DUESTRACK_ORG_NAME
+        sync: false
+      - key: DUESTRACK_PRIVACY_CONTACT
+        sync: false
+
+databases:
+  - name: duestrack-db
+    region: singapore
+    plan: 0.1c-256mb            # Render "Basic 256 MB", about US$6/month; paid plans are kept and backed up
+    databaseName: duestrack
+    user: duestrack
+    ipAllowList: []             # reachable only from the DuesTrack service, not from the internet

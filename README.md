@@ -188,7 +188,29 @@ folder off the server too (for example with `rclone` to cloud storage).
 To restore into a fresh database: `python manage.py migrate`, then
 `python manage.py restore_backup FILE --load`. `--output data.json` only decrypts it.
 
-## Production
+## Hosting on Render (no server to manage)
+
+`render.yaml` is a Render Blueprint: a web service and a PostgreSQL database, both in Singapore, set up from
+the browser with **New > Blueprint**. Render serves HTTPS on a `*.onrender.com` address (a custom domain can
+be added later). It deploys the `main` branch again on every push.
+
+- Plans: web service `0.5c-512mb` (Starter, about US$7/month, always on) and database `0.1c-256mb` (about
+  US$6/month). Free plans are not used: a free web service sleeps when idle and a free database is deleted
+  after a few weeks. Paid databases get daily backups and a few days of point-in-time recovery from Render.
+- Before each new version goes live, `migrate` updates the database and `ensure_first_user` creates the first
+  Treasurer (also a superuser) from `DUESTRACK_FIRST_USERNAME` and `DUESTRACK_FIRST_PASSWORD` if there is no
+  superuser yet. That password is temporary: the first login must change it. Once an administrator exists the
+  command does nothing, so it never resets a password.
+- Static files are served by WhiteNoise; `DATABASE_URL` comes from the database; `RENDER_EXTERNAL_HOSTNAME`
+  is added to the allowed hosts automatically. Set `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS`
+  too if you add a custom domain.
+- The client address for lockouts and the audit log comes from Cloudflare's `True-Client-IP` /
+  `CF-Connecting-IP`, since Render's `X-Forwarded-For` can be forged by the client. Override with
+  `DJANGO_CLIENT_IP_HEADERS` (comma-separated `request.META` names) if needed.
+- The `backup` command writes to the service's own disk, which Render wipes on each deploy, so rely on
+  Render's database backups there, or download a backup from the Render dashboard now and then.
+
+## Production on your own server
 
 `deploy/` has a systemd unit for gunicorn, a daily backup timer, an nginx site with HTTPS (certbot), and an
 example environment file. On a VPS (a Singapore region keeps latency low from the Philippines):
@@ -208,3 +230,5 @@ sudo cp deploy/nginx.conf /etc/nginx/sites-available/duestrack   # set your doma
 
 With `DJANGO_DEBUG=0` the app requires `DJANGO_SECRET_KEY`, redirects to HTTPS, sends HSTS, and marks
 cookies secure. It reads the client address from nginx's `X-Real-IP` for lockouts and the audit log.
+Instead of `createsuperuser` you can set `DUESTRACK_FIRST_USERNAME` / `DUESTRACK_FIRST_PASSWORD` and run
+`manage.py ensure_first_user`.

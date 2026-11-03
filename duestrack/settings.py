@@ -7,6 +7,8 @@ SQLite for local testing and PostgreSQL in production.
 import os
 from pathlib import Path
 
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -21,6 +23,11 @@ if not DEBUG and SECRET_KEY.startswith("dev-only"):
 
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
 CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+# Render sets this to the service's onrender.com address; allow it without extra setup.
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -41,6 +48,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -71,7 +79,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "duestrack.wsgi.application"
 
-if os.environ.get("POSTGRES_DB"):
+if os.environ.get("DATABASE_URL"):
+    # Hosted PostgreSQL (e.g. Render) gives one connection URL.
+    DATABASES = {
+        "default": dj_database_url.parse(os.environ["DATABASE_URL"], conn_max_age=600, conn_health_checks=True)
+    }
+elif os.environ.get("POSTGRES_DB"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -107,6 +120,15 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# WhiteNoise serves static files from gunicorn when there is no nginx in front (e.g. Render).
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        if not DEBUG
+        else "django.contrib.staticfiles.storage.StaticFilesStorage"
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -119,8 +141,17 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 ROSTER_MAX_ROWS = 5000
 
-# Behind nginx (production), take the client address from X-Real-IP for lockouts and the audit log.
-TRUST_X_REAL_IP = env_bool("DJANGO_TRUST_X_REAL_IP", not DEBUG)
+# Where the visitor's address comes from, for login lockouts and the audit log (see duestrack/net.py).
+# Behind our nginx (production default) it is X-Real-IP. On Render, Cloudflare sets True-Client-IP and
+# CF-Connecting-IP; X-Forwarded-For is not used because clients can forge it there.
+if os.environ.get("DJANGO_CLIENT_IP_HEADERS") is not None:
+    CLIENT_IP_HEADERS = [h.strip() for h in os.environ["DJANGO_CLIENT_IP_HEADERS"].split(",") if h.strip()]
+elif RENDER_EXTERNAL_HOSTNAME:
+    CLIENT_IP_HEADERS = ["HTTP_TRUE_CLIENT_IP", "HTTP_CF_CONNECTING_IP"]
+elif env_bool("DJANGO_TRUST_X_REAL_IP", not DEBUG):
+    CLIENT_IP_HEADERS = ["HTTP_X_REAL_IP"]
+else:
+    CLIENT_IP_HEADERS = []
 
 # Encrypted backups (manage.py backup). Records are never deleted automatically.
 DUESTRACK_BACKUP_KEY = os.environ.get("DUESTRACK_BACKUP_KEY", "")
@@ -141,3 +172,12 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+
+# Send warnings and errors (including the traceback of any server error) to the console, which
+# systemd's journal or the hosting dashboard's log viewer captures.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+}
