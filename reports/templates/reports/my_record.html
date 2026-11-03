@@ -7,7 +7,7 @@
     <select name="term" onchange="this.form.submit()" aria-label="Term">
       {% for r in records %}<option value="{{ r.term_id }}"{% if r.pk == student.pk %} selected{% endif %}>{{ r.term }}</option>{% endfor %}
     </select></form>{% endif %}
-    {% if student %}<button type="button" onclick="window.print()">Print</button>{% endif %}</span>
+    {% if student %}<button type="button" class="secondary" onclick="window.print()"><svg><use href="#i-printer"></use></svg>Print</button>{% endif %}</span>
 </div>
 {% if student %}
   {% include "reports/_statement.html" with receipt_links=True %}

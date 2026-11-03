@@ -17,7 +17,7 @@
 <section class="card">
   <h2>Fines by event</h2>
   {% if not student.is_enrolled %}<p class="muted">Not enrolled: no fines or dues.</p>{% endif %}
-  <table class="grid">
+  <div class="table-wrap"><table class="grid">
     <thead><tr><th>Date</th><th>Event</th><th>Missing marks</th><th>Uniform</th><th class="num">Fine</th><th></th></tr></thead>
     <tbody>
     {% for line in acct.lines %}
@@ -31,12 +31,12 @@
       </tr>
     {% empty %}<tr><td colspan="6" class="muted">No fines.</td></tr>{% endfor %}
     </tbody>
-  </table>
+  </table></div>
 </section>
 
 <section class="card">
   <h2>Payments and refunds</h2>
-  <table class="grid">
+  <div class="table-wrap"><table class="grid">
     <thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th class="num">Amount</th><th>Note</th><th></th></tr></thead>
     <tbody>
     {% for p in payments %}
@@ -50,20 +50,20 @@
       </tr>
     {% empty %}<tr><td colspan="6" class="muted">No payments yet.</td></tr>{% endfor %}
     </tbody>
-  </table>
+  </table></div>
 </section>
 
 {% if waivers %}
 <section class="card">
   <h2>Waivers</h2>
-  <table class="grid">
+  <div class="table-wrap"><table class="grid">
     <thead><tr><th>Event</th><th>Reason</th><th>By</th><th>Status</th><th></th></tr></thead>
     <tbody>{% for w in waivers %}
       <tr class="{% if w.revoked_at %}dim{% endif %}"><td>{{ w.event }}</td><td>{{ w.reason }}</td><td>{{ w.created_by|default:"—" }}, {{ w.created_at|date:"M j, Y" }}</td>
         <td>{% if w.revoked_at %}Revoked {{ w.revoked_at|date:"M j, Y" }} by {{ w.revoked_by }}{% else %}Active{% endif %}</td>
         <td>{% if can_edit_finance and not w.revoked_at %}<form method="post" action="{% url 'finance:revoke_waiver' w.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link-dark">Revoke</button></form>{% endif %}</td></tr>
     {% endfor %}</tbody>
-  </table>
+  </table></div>
 </section>
 {% endif %}
 {% endblock %}

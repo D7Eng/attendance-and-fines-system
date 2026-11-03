@@ -4,34 +4,73 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0f2742">
   <title>{% block title %}DuesTrack{% endblock %}</title>
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
   <link rel="stylesheet" href="{% static 'duestrack.css' %}">
 </head>
-<body>
-  <header class="topbar">
-    <a class="brand" href="{% url 'home' %}">DuesTrack</a>
-    {% if user.is_authenticated %}
-      <nav>
-        {% if can_take_attendance %}<a href="{% url 'reports:dashboard' %}">Dashboard</a>{% endif %}
-        {% if can_view_roster %}<a href="{% url 'roster:student_list' %}">Students</a>{% endif %}
-        {% if can_take_attendance %}<a href="{% url 'events:event_list' %}">Events</a>{% endif %}
-        {% if can_view_finance %}<a href="{% url 'finance:payment_list' %}">Payments</a>
-          <a href="{% url 'reports:balances' %}">Reports</a>{% endif %}
-        {% if can_edit_roster %}<a href="{% url 'roster:import_upload' %}">Import roster</a>
-          <a href="{% url 'student_logins' %}">Logins</a>{% endif %}
-        {% if is_student %}<a href="{% url 'me' %}">My record</a>{% endif %}
-        {% if can_edit_settings %}<a href="{% url 'terms:term_list' %}">Settings</a>{% endif %}
-        {% if can_view_audit %}<a href="{% url 'audit:log' %}">Audit log</a>{% endif %}
-        {% if user.is_staff %}<a href="{% url 'admin:index' %}">Setup</a>{% endif %}
-      </nav>
-      <form method="post" action="{% url 'logout' %}" class="logout">
-        {% csrf_token %}<a href="{% url 'password_change' %}">{{ user.get_username }}</a> <button type="submit" class="link">Log out</button>
-      </form>
-    {% endif %}
+<body class="{% if user.is_authenticated %}layout-app{% else %}layout-public{% endif %}">
+{% include "_icons.html" %}
+{% if user.is_authenticated %}
+{% with ns=request.resolver_match.namespace un=request.resolver_match.url_name %}
+<input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true" tabindex="-1">
+<aside class="sidebar noprint" aria-label="Main menu">
+  <a class="brand" href="{% url 'home' %}">
+    <span class="brand-mark" aria-hidden="true"><svg><use href="#i-logo"></use></svg></span>
+    <span class="brand-text"><b>DuesTrack</b><small>{{ org_name|default:"Attendance &amp; fines" }}</small></span>
+  </a>
+  <nav class="side-nav">
+    {% if can_take_attendance or is_student %}<p class="side-label">Overview</p>{% endif %}
+    {% if can_take_attendance %}<a href="{% url 'reports:dashboard' %}"{% if un == "dashboard" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-dashboard"></use></svg>Dashboard</a>{% endif %}
+    {% if is_student %}<a href="{% url 'me' %}"{% if un == "me" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-user"></use></svg>My record</a>{% endif %}
+
+    {% if can_view_roster or can_take_attendance %}<p class="side-label">Records</p>{% endif %}
+    {% if can_view_roster %}<a href="{% url 'roster:student_list' %}"{% if un == "student_list" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-users"></use></svg>Students</a>{% endif %}
+    {% if can_take_attendance %}<a href="{% url 'events:event_list' %}"{% if ns == "events" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-calendar"></use></svg>Events &amp; attendance</a>{% endif %}
+
+    {% if can_view_finance %}<p class="side-label">Money</p>
+    <a href="{% url 'finance:payment_list' %}"{% if ns == "finance" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-wallet"></use></svg>Payments</a>
+    <a href="{% url 'reports:balances' %}"{% if ns == "reports" and un != "dashboard" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-chart"></use></svg>Reports</a>{% endif %}
+
+    {% if can_edit_roster or can_edit_settings or can_view_audit or user.is_staff %}<p class="side-label">Administration</p>{% endif %}
+    {% if can_edit_roster %}<a href="{% url 'roster:import_upload' %}"{% if ns == "roster" and un != "student_list" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-upload"></use></svg>Import roster</a>
+    <a href="{% url 'student_logins' %}"{% if un == "student_logins" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-key"></use></svg>Student logins</a>{% endif %}
+    {% if can_edit_settings %}<a href="{% url 'terms:term_list' %}"{% if ns == "terms" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-settings"></use></svg>Terms &amp; rates</a>{% endif %}
+    {% if can_view_audit %}<a href="{% url 'audit:log' %}"{% if ns == "audit" %} class="active" aria-current="page"{% endif %}><svg><use href="#i-shield"></use></svg>Audit &amp; backup</a>{% endif %}
+    {% if user.is_staff %}<a href="{% url 'admin:index' %}"><svg><use href="#i-tool"></use></svg>Setup</a>{% endif %}
+  </nav>
+  <div class="side-foot">
+    <a href="{% url 'privacy' %}"{% if un == "privacy" %} class="active"{% endif %}><svg><use href="#i-lock"></use></svg>Privacy notice</a>
+  </div>
+</aside>
+<label for="nav-toggle" class="scrim noprint" aria-hidden="true"></label>
+<div class="shell">
+  <header class="appbar noprint">
+    <label for="nav-toggle" class="icon-btn menu-btn" title="Menu"><svg><use href="#i-menu"></use></svg><span class="sr-only">Open menu</span></label>
+    <div class="appbar-title">{% block appbar %}<span class="today">{% now "l, F j, Y" %}</span>{% endblock %}</div>
+    <details class="usermenu">
+      <summary>
+        <span class="avatar" aria-hidden="true">{{ user.get_username|slice:":1"|upper }}</span>
+        <span class="who"><b>{% firstof user.get_full_name user.get_username %}</b><small>{{ role_label|default:"Signed in" }}</small></span>
+        <svg class="chev" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      </summary>
+      <div class="usermenu-pop">
+        <p class="muted small">Signed in as <b>{{ user.get_username }}</b></p>
+        <a href="{% url 'password_change' %}"><svg><use href="#i-lock"></use></svg>Change password</a>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+          <button type="submit" class="menu-item"><svg><use href="#i-logout"></use></svg>Log out</button>
+        </form>
+      </div>
+    </details>
   </header>
-  <main>
-    {% for message in messages %}<div class="msg msg-{{ message.tags }}">{{ message }}</div>{% endfor %}
+  <main class="content">
+{% endwith %}
+{% else %}
+<main class="public">
+{% endif %}
+    {% for message in messages %}<div class="msg msg-{{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
     {% block content %}{% endblock %}
   </main>
+{% if user.is_authenticated %}</div>{% endif %}
 </body>
 </html>

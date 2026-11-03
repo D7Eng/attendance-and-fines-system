@@ -16,10 +16,10 @@
     <option value="owing"{% if show == "owing" %} selected{% endif %}>With a balance</option>
     <option value="credit"{% if show == "credit" %} selected{% endif %}>With credit</option></select>
   <button type="submit">Filter</button>
-  <button type="button" onclick="window.print()">Print</button>
+  <button type="button" class="secondary" onclick="window.print()"><svg><use href="#i-printer"></use></svg>Print</button>
   <a href="?{{ request.GET.urlencode }}&format=csv">Download CSV</a>
 </form>
-<table class="grid report">
+<div class="table-wrap"><table class="grid report">
   <thead><tr><th>Student no.</th><th>Name</th><th>Yr</th><th>Group</th><th class="num">Abs.</th><th class="num">Unif.</th>
     <th class="num">Fines</th><th class="num">Dues</th><th class="num">Paid</th><th class="num">Balance</th></tr></thead>
   <tbody>{% for a in rows %}
@@ -32,7 +32,7 @@
   <tfoot><tr><th colspan="4">{{ overall.students }} student{{ overall.students|pluralize }}</th><th class="num">{{ overall.absences }}</th><th class="num">{{ overall.uniform_violations }}</th>
     <th class="num">{{ overall.fines|floatformat:2|intcomma }}</th><th class="num">{{ overall.dues|floatformat:2|intcomma }}</th>
     <th class="num">{{ overall.collected_net|floatformat:2|intcomma }}</th><th class="num">{{ overall.outstanding|floatformat:2|intcomma }}</th></tr></tfoot>
-</table>
+</table></div>
 <p class="muted">Totals cover every student in the year and group chosen. Fines exclude waived amounts ({{ overall.waived|floatformat:2|intcomma }}). Paid is net of refunds; the balance total counts only students who owe.</p>
 {% endif %}
 {% endblock %}

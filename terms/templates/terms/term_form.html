@@ -19,7 +19,7 @@
        blank (Any) to match everyone. When several rates match a student, the one with the most criteria wins.</p>
     {{ formset.management_form }}
     {{ formset.non_form_errors }}
-    <table class="grid rates">
+    <div class="table-wrap"><table class="grid rates">
       <thead><tr><th>Label</th><th>Officers</th><th>Year</th><th>Group</th><th>Weekly amount</th><th>Delete</th></tr></thead>
       <tbody>{% for f in formset %}
         <tr>{{ f.id }}
@@ -27,7 +27,7 @@
           <td>{{ f.group }}</td><td>{{ f.weekly_amount }}{{ f.weekly_amount.errors }}</td><td>{% if f.instance.pk %}{{ f.DELETE }}{% endif %}</td>
         </tr>
       {% endfor %}</tbody>
-    </table>
+    </table></div>
   </section>
   <div class="apply"><button type="submit">Save settings</button> <a href="{% url 'terms:term_list' %}">Cancel</a></div>
 </form>

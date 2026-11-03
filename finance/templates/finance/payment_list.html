@@ -32,7 +32,7 @@
   <button type="submit">Filter</button>
 </form>
 <p>Collected <b>{{ totals.collected|floatformat:2|intcomma }}</b> · Refunded <b>{{ totals.refunded|floatformat:2|intcomma }}</b> <span class="muted">(reversed entries excluded)</span></p>
-<table class="grid">
+<div class="table-wrap"><table class="grid">
   <thead><tr><th>Receipt</th><th>Date</th><th>Student</th><th>Method</th><th class="num">Amount</th><th>By</th></tr></thead>
   <tbody>
   {% for p in page %}
@@ -46,7 +46,7 @@
     </tr>
   {% empty %}<tr><td colspan="6" class="muted">No payments match.</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 {% if page.has_other_pages %}<nav class="pager">
   {% if page.has_previous %}<a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.previous_page_number }}">Previous</a>{% endif %}
   <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>

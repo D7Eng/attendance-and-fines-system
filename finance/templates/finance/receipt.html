@@ -2,13 +2,13 @@
 {% load humanize %}
 {% block title %}{{ p.receipt_no }} · DuesTrack{% endblock %}
 {% block content %}
-<div class="noprint apply"><button type="button" onclick="window.print()">Print</button>
+<div class="noprint apply"><button type="button" class="secondary" onclick="window.print()"><svg><use href="#i-printer"></use></svg>Print</button>
   {% if can_view_finance %}<a href="{% url 'finance:account' p.student_id %}">Back to account</a>{% endif %}</div>
 <section class="card receipt">
   {% if p.is_reversed %}<div class="void">REVERSED</div>{% endif %}
   <div class="muted">{{ org_name|capfirst }}</div>
   <h1>{% if p.kind == "refund" %}Refund voucher{% else %}Official receipt{% endif %} <span class="mono">{{ p.receipt_no }}</span></h1>
-  <table class="grid kv">
+  <div class="table-wrap"><table class="grid kv">
     <tr><th>Date</th><td>{{ p.recorded_at|date:"F j, Y g:i A" }}</td></tr>
     <tr><th>{% if p.kind == "refund" %}Paid to{% else %}Received from{% endif %}</th><td>{{ p.student.full_name }} (<span class="mono">{{ p.student.student_no }}</span>)</td></tr>
     <tr><th>Term</th><td>{{ p.term }}</td></tr>
@@ -18,7 +18,7 @@
     <tr><th>Balance after</th><td>₱{{ p.balance_after|floatformat:2|intcomma }}</td></tr>
     <tr><th>Recorded by</th><td>{{ p.recorded_by.get_full_name|default:p.recorded_by|default:"—" }}</td></tr>
     {% if p.is_reversed %}<tr><th>Reversed</th><td>{{ p.reversed_at|date:"F j, Y" }}: {{ p.reversal_reason }}</td></tr>{% endif %}
-  </table>
+  </table></div>
   <p class="sign">Signature: ______________________</p>
 </section>
 {% endblock %}

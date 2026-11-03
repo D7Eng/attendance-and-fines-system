@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
 from accounts import roles
+from audit.models import AuditLog
 from accounts.roles import ATTENDANCE_EDITORS, FINANCE_VIEWERS, role_required
 from events.models import Event
 from finance.ledger import account_for
@@ -17,7 +18,7 @@ from finance.models import Payment
 from roster.models import YEAR_LEVEL_CHOICES, Student
 from terms.models import Term
 
-from .summary import term_summary
+from .summary import term_summary, totals_by_group
 
 YEARS = dict(YEAR_LEVEL_CHOICES)
 
@@ -59,25 +60,57 @@ def dashboard(request):
     context = {"term": term, "terms": Term.objects.all()}
     if term is None:
         return render(request, "reports/dashboard.html", context)
-    _, overall, by_year, events = term_summary(term)
+    accounts, overall, by_year, events = term_summary(term)
+    today = timezone.localdate()
+    held = [e for e in events if e.expected]
+    complete = sum(e.complete for e in held)
+    expected = sum(e.expected for e in held)
     context.update(
         overall=overall,
         by_year=[(y, YEARS[y], t) for y, t in by_year.items()],
         events=events[-10:][::-1],
-        today=timezone.localdate(),
+        today=today,
+        events_held=len(held),
+        attendance_rate=(complete * 100 / expected) if expected else 0,
+        event_chart=[
+            {"event": e.event, "rate": e.attendance_rate, "complete": e.complete, "expected": e.expected}
+            for e in held[-8:]
+        ],
     )
     if roles.has_role(request.user, *FINANCE_VIEWERS):
         active = Payment.objects.filter(term=term, reversed_at__isnull=True)
         context["recent"] = Payment.objects.filter(term=term).select_related("student")[:8]
-        context["daily"] = (
-            active.filter(
-                kind=Payment.PAYMENT, recorded_at__date__gte=timezone.localdate() - datetime.timedelta(days=13)
-            )
+        start = today - datetime.timedelta(days=13)
+        daily = {
+            row["day"]: row
+            for row in active.filter(kind=Payment.PAYMENT, recorded_at__date__gte=start)
             .annotate(day=TruncDate("recorded_at"))
             .values("day")
             .annotate(total=Sum("amount"), n=Count("id"))
-            .order_by("-day")
-        )
+        }
+        days = [start + datetime.timedelta(days=i) for i in range(14)]
+        series = [{"day": d, "total": daily.get(d, {}).get("total") or 0, "n": daily.get(d, {}).get("n") or 0} for d in days]
+        top = max((d["total"] for d in series), default=0) or 1
+        for d in series:
+            d["pct"] = d["total"] * 100 / top
+        context["daily"] = series
+        context["daily_total"] = sum(d["total"] for d in series)
+        groups = totals_by_group(accounts)
+        scale = max((t.billed for t in groups.values()), default=0) or 1
+        context["group_chart"] = [
+            {
+                "label": f"{YEARS[y]} {g}".strip(),
+                "year": y,
+                "group": g,
+                "t": t,
+                "fines_pct": t.fines * 100 / scale,
+                "dues_pct": t.dues * 100 / scale,
+                "collected_pct": max(t.collected_net, 0) * 100 / scale,
+            }
+            for (y, g), t in groups.items()
+        ]
+    if roles.has_role(request.user, *roles.AUDIT_VIEWERS):
+        context["activity"] = AuditLog.objects.all()[:8]
     return render(request, "reports/dashboard.html", context)
 
 

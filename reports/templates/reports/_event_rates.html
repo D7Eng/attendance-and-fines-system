@@ -1,0 +1,5 @@
+<div class="rate-list">{% for e in event_chart %}
+  <div class="rate-row"><a href="{% url 'reports:event_report' e.event.pk %}" title="{{ e.event.name }}">{{ e.event.name }}</a><span class="num">{{ e.rate|floatformat:0 }}%</span>
+    <div class="bar"><i style="width:{{ e.rate|floatformat:2 }}%"></i></div>
+    <small>{{ e.event.date|date:"M j" }} · {{ e.complete }} of {{ e.expected }} complete</small></div>
+{% empty %}<p class="empty">No events held yet.</p>{% endfor %}</div>

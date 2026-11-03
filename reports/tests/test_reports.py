@@ -10,7 +10,7 @@ from django.urls import reverse
 from accounts import roles
 from events.models import Attendance, Event
 from finance import services
-from reports.summary import term_summary
+from reports.summary import term_summary, totals_by_group
 from roster.models import Student
 from terms.models import Term
 
@@ -59,6 +59,26 @@ class ReportTests(TestCase):
         self.assertNotContains(response, "Outstanding")
         self.client.force_login(self.treasurer)
         self.assertContains(self.client.get(reverse("reports:dashboard")), "Outstanding")
+
+    def test_totals_by_group(self):
+        accounts, _, _, _ = term_summary(self.term)
+        groups = totals_by_group(accounts)
+        self.assertEqual(list(groups), [(1, "A"), (1, "B"), (2, "")])
+        self.assertEqual(groups[(1, "B")].fines, Decimal("150"))
+        self.assertEqual(groups[(1, "A")].paid, Decimal("100"))
+
+    def test_dashboard_charts_and_menu_follow_role(self):
+        self.client.force_login(self.treasurer)
+        response = self.client.get(reverse("reports:dashboard"))
+        self.assertContains(response, "Billed and collected by group")
+        self.assertContains(response, "1st year B")
+        self.assertEqual(len(response.context["daily"]), 14)
+        self.assertContains(response, reverse("finance:payment_list"))
+        self.client.force_login(make_user("o", roles.OFFICER))
+        response = self.client.get(reverse("reports:dashboard"))
+        self.assertNotContains(response, "Billed and collected by group")
+        self.assertContains(response, "Attendance by event")
+        self.assertNotContains(response, reverse("finance:payment_list"))
 
     def test_balances_report_and_csv(self):
         self.client.force_login(self.treasurer)

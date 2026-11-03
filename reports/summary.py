@@ -86,3 +86,16 @@ def term_summary(term, students=None, as_of=None):
                 totals.missing += line.missing
                 totals.uniform += line.uniform
     return accounts, overall, dict(sorted(by_year.items())), list(events.values())
+
+
+def totals_by_group(accounts):
+    """Totals per year level and section (e.g. "1st year A"), in roster order.
+
+    Uses the same rule as term_summary: students who are not enrolled count only if they paid something.
+    """
+    groups = defaultdict(Totals)
+    for acct in accounts.values():
+        if not acct.student.is_enrolled and not acct.paid:
+            continue
+        groups[(acct.student.year_level, acct.student.group.strip().upper())].add(acct)
+    return dict(sorted(groups.items()))

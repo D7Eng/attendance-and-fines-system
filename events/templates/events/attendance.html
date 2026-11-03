@@ -24,7 +24,7 @@
 
 <form method="post">
   {% csrf_token %}
-  <table class="grid attendance">
+  <div class="table-wrap"><table class="grid attendance">
     <thead><tr><th>Student no.</th><th>Name</th><th>Group</th>
       {% for field, label, is_uniform in columns %}
         <th class="center{% if is_uniform %} uniform{% endif %}">{{ label }}<br>
@@ -47,7 +47,7 @@
       <tr><td colspan="{{ columns|length|add:4 }}" class="muted">No enrolled students are expected at this event.</td></tr>
     {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% if rows %}<div class="apply"><button type="submit">Save attendance</button>
     <span class="muted">Uniform columns record a violation (checked = violated).</span></div>{% endif %}
 </form>
@@ -55,13 +55,13 @@
 {% if imports %}
 <section class="card">
   <h2>QR scan files</h2>
-  <table class="grid">
+  <div class="table-wrap"><table class="grid">
     <thead><tr><th>File</th><th>Uploaded</th><th>By</th><th>Status</th><th>Marks added</th></tr></thead>
     <tbody>{% for imp in imports %}
       <tr><td><a href="{% url 'events:scan_preview' imp.pk %}">{{ imp.file_name }}</a></td><td>{{ imp.uploaded_at|date:"M j, g:i A" }}</td>
         <td>{{ imp.uploaded_by|default:"—" }}</td><td>{{ imp.get_status_display }}</td><td>{{ imp.marks_added }}</td></tr>
     {% endfor %}</tbody>
-  </table>
+  </table></div>
 </section>
 {% endif %}
 {% endblock %}

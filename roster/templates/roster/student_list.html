@@ -44,7 +44,7 @@
 </form>
 
 <p class="muted">{{ result_count }} student{{ result_count|pluralize }}</p>
-<table class="grid">
+<div class="table-wrap"><table class="grid">
   <thead><tr><th>#</th><th>Student no.</th><th>Name</th><th>Group</th><th>Officer</th><th>Status</th></tr></thead>
   <tbody>
   {% for s in page %}
@@ -60,7 +60,7 @@
     <tr><td colspan="6" class="muted">No students match.{% if can_edit_roster and not q and not group %} <a href="{% url 'roster:import_upload' %}">Import a roster</a>.{% endif %}</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% if page.has_other_pages %}
 <nav class="pager">
   {% if page.has_previous %}<a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.previous_page_number }}">Previous</a>{% endif %}

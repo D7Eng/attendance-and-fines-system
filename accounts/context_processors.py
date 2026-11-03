@@ -16,4 +16,5 @@ def roles(request):
         "can_edit_settings": bool(user_roles & r.SETTINGS_EDITORS),
         "can_view_audit": bool(user_roles & r.AUDIT_VIEWERS),
         "is_student": r.STUDENT in user_roles,
+        "role_label": next((role for role in (r.TREASURER, r.ADMIN, r.OFFICER, r.STUDENT) if role in user_roles), ""),
     }

@@ -1,19 +1,47 @@
 {% extends "base.html" %}
 {% block title %}Log in · DuesTrack{% endblock %}
 {% block content %}
-<section class="card narrow">
-  <h1>Log in</h1>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="hidden" name="next" value="{{ next }}">
-    <button type="submit">Log in</button>
-  </form>
-  <p class="notice">
-    <strong>Privacy notice.</strong> DuesTrack keeps only the student details needed to record attendance,
-    fines, dues and payments for the organization. Access is limited by role, and students can see only their
-    own record. Data is processed in line with the Data Privacy Act of 2012 (RA 10173).
-    <a href="{% url 'privacy' %}">Read the full privacy notice</a>.
-  </p>
-</section>
+<div class="auth">
+  <section class="auth-hero" aria-hidden="true">
+    <span class="brand"><span class="brand-mark"><svg><use href="#i-logo"></use></svg></span>
+      <span class="brand-text"><b>DuesTrack</b><small>{{ org_name|default:"Attendance &amp; fines" }}</small></span></span>
+    <div>
+      <h2>Attendance, fines and dues in one place.</h2>
+      <p>Officers record attendance, the treasurer issues receipts, and every student can check their own balance anytime.</p>
+      <ul class="auth-points">
+        <li><svg><use href="#i-check"></use></svg>QR scanner import with automatic fines</li>
+        <li><svg><use href="#i-check"></use></svg>Official receipts and printable statements</li>
+        <li><svg><use href="#i-check"></use></svg>Role-based access and a full audit log</li>
+      </ul>
+    </div>
+    <small>Protected under the Data Privacy Act of 2012 (RA 10173).</small>
+  </section>
+  <section class="auth-main">
+    <div class="auth-card">
+      <span class="brand auth-mobile-brand"><span class="brand-mark"><svg><use href="#i-logo"></use></svg></span>
+        <span class="brand-text"><b>DuesTrack</b><small>{{ org_name|default:"Attendance &amp; fines" }}</small></span></span>
+      <h1>Welcome back</h1>
+      <p class="lead">Log in with your username or student number.</p>
+      <form method="post" class="auth-form" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        {% endfor %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="full">Log in</button>
+      </form>
+      <p class="notice">
+        <strong>Privacy notice.</strong> DuesTrack keeps only the student details needed to record attendance,
+        fines, dues and payments for the organization. Access is limited by role, and students can see only their
+        own record. Data is processed in line with the Data Privacy Act of 2012 (RA 10173).
+        <a href="{% url 'privacy' %}">Read the full privacy notice</a>.
+      </p>
+    </div>
+  </section>
+</div>
 {% endblock %}

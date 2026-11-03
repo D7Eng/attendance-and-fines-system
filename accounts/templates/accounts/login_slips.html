@@ -3,7 +3,7 @@
 {% block content %}
 <div class="head noprint">
   <h1>Login slips</h1>
-  <span><button type="button" onclick="window.print()">Print</button> <a href="{% url 'student_logins' %}?term={{ term.pk }}">Back</a></span>
+  <span><button type="button" class="secondary" onclick="window.print()"><svg><use href="#i-printer"></use></svg>Print</button> <a href="{% url 'student_logins' %}?term={{ term.pk }}">Back</a></span>
 </div>
 <p class="msg msg-warning noprint">These temporary passwords are shown only now. Print or copy them before leaving this page.</p>
 {% if linked %}<p class="muted noprint">{{ linked }} student{{ linked|pluralize }} already had a login (kept their password).</p>{% endif %}
